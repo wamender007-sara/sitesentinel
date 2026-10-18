@@ -1,0 +1,42 @@
+{
+  "name": "SiteSentinel - Error Alert",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.AUDITOR_DIGEST_EMAIL || $env.GMAIL_USER || 'admin@sitesentinel.local' }}",
+        "subject": "=SiteSentinel Workflow Alert: Failure in {{ $json.workflow.name }}",
+        "message": "=SiteSentinel n8n Automation Alert:\n\nA failure occurred in workflow: {{ $json.workflow.name }}\nNode: {{ $json.execution.error.node.name || 'Unknown' }}\nError Message: {{ $json.execution.error.message || 'No detail' }}\nExecution ID: {{ $json.execution.id }}\n\nPlease inspect the n8n execution console.",
+        "options": {}
+      },
+      "id": "2",
+      "name": "Send Alert Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [450, 300]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send Alert Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

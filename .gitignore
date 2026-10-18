@@ -1,0 +1,56 @@
+# Dependency directories
+node_modules/
+node_modules
+.pnp
+.pnp.js
+
+# Environment variables & secrets (Strictly enforce Rule 6)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+!*.env.example
+
+# Production & compilation builds
+dist/
+scanner/dist
+scanner/dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Logs & debugging
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Playwright & Browser automation artifacts
+screenshots/
+scanner/output/screenshots/
+scanner/output/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Docker & Database local persistent volumes
+postgres_data/
+n8n_data/
+*.sqlite
+*.db
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace

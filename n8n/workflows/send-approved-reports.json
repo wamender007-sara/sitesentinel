@@ -1,0 +1,177 @@
+{
+  "name": "SiteSentinel - Send Approved Reports",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Every 5 Minutes Poll",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://host.docker.internal:4001/reports/approved",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.API_SECRET_TOKEN || 'sitesentinel_dev_api_key_123' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2",
+      "name": "Fetch Approved Reports",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-has-email",
+              "leftValue": "={{ $json.recipient_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "Has Valid Recipient?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "4",
+      "name": "Rate Limit Delay (1/min)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.NODE_ENV === 'production' ? $json.recipient_email : ($env.TEST_EMAIL_RECIPIENT || $env.GMAIL_USER || 'test-recipient@sitesentinel.local') }}",
+        "subject": "={{ $json.report_title }}",
+        "message": "={{ $json.report_body + '\\n\\n---\\nEvidence URL: ' + $json.url + '\\nDetected Flaw: ' + $json.type + '\\nSeverity: ' + $json.severity + '\\n\\nSent via SiteSentinel Quality Assurance Engine' }}",
+        "options": {}
+      },
+      "id": "5",
+      "name": "Send Gmail to Site Owner",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://host.docker.internal:4001/reports/{{ $json.id }}/mark-sent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.API_SECRET_TOKEN || 'sitesentinel_dev_api_key_123' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "Mark Report As Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 200]
+    }
+  ],
+  "connections": {
+    "Every 5 Minutes Poll": {
+      "main": [
+        [
+          {
+            "node": "Fetch Approved Reports",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Approved Reports": {
+      "main": [
+        [
+          {
+            "node": "Has Valid Recipient?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Valid Recipient?": {
+      "main": [
+        [
+          {
+            "node": "Rate Limit Delay (1/min)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rate Limit Delay (1/min)": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail to Site Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Gmail to Site Owner": {
+      "main": [
+        [
+          {
+            "node": "Mark Report As Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

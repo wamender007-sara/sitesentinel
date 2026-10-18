@@ -1,0 +1,116 @@
+{
+  "name": "SiteSentinel - Scheduled Daily Scan",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Daily Cron (2 AM)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://host.docker.internal:4001/sites",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.API_SECRET_TOKEN || 'sitesentinel_dev_api_key_123' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2",
+      "name": "Fetch Configured Sites",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Iterate Sites",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:4001/scans",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.API_SECRET_TOKEN || 'sitesentinel_dev_api_key_123' }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"http://\" + $json.domain + \"/\",\n  \"autoAnalyze\": true\n}",
+        "options": {}
+      },
+      "id": "4",
+      "name": "Trigger Scan & AI Triage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Daily Cron (2 AM)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Configured Sites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Configured Sites": {
+      "main": [
+        [
+          {
+            "node": "Iterate Sites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Iterate Sites": {
+      "main": [
+        [
+          {
+            "node": "Trigger Scan & AI Triage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

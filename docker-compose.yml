@@ -1,0 +1,104 @@
+services:
+  # ============================================================================
+  # PostgreSQL 16 - Central Data Store for Scans, Issues, and Approvals
+  # ============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: sitesentinel_postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sitesentinel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sitesentinel_secure_dev_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-sitesentinel_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sitesentinel} -d ${POSTGRES_DB:-sitesentinel_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - sitesentinel_net
+
+  # ============================================================================
+  # Fastify REST API Service
+  # ============================================================================
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: sitesentinel_api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-4001}:4001"
+    environment:
+      - API_PORT=4001
+      - API_HOST=0.0.0.0
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-sitesentinel}:${POSTGRES_PASSWORD:-sitesentinel_secure_dev_pass}@postgres:5432/${POSTGRES_DB:-sitesentinel_db}
+      - API_SECRET_TOKEN=${API_SECRET_TOKEN:-sitesentinel_dev_api_key_123}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-1.5-flash}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sitesentinel_net
+
+  # ============================================================================
+  # Next.js Dashboard UI
+  # ============================================================================
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: sitesentinel_dashboard
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_PORT:-3000}:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:4001
+      - NEXT_PUBLIC_API_KEY=${API_SECRET_TOKEN:-sitesentinel_dev_api_key_123}
+    depends_on:
+      - api
+    networks:
+      - sitesentinel_net
+
+  # ============================================================================
+  # n8n - Workflow Automation for Human-Approved Bug Report Dispatch
+  # ============================================================================
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: sitesentinel_n8n
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-sitesentinel_default_encryption_key_32c}
+      - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+      - GENERIC_TIMEZONE=UTC
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sitesentinel_net
+
+volumes:
+  postgres_data:
+    driver: local
+  n8n_data:
+    driver: local
+
+networks:
+  sitesentinel_net:
+    driver: bridge

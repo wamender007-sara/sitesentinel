@@ -1,0 +1,20 @@
+{
+  "name": "@sitesentinel/scanner",
+  "version": "1.0.0",
+  "description": "SiteSentinel headless Chromium auditing engine",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "scan": "tsx src/cli.ts",
+    "scan:all": "tsx src/cli.ts --all",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "playwright": "^1.50.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

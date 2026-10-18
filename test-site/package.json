@@ -1,0 +1,10 @@
+{
+  "name": "sitesentinel-test-site",
+  "version": "1.0.0",
+  "description": "Intentionally flawed testbed site for SiteSentinel audits",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
