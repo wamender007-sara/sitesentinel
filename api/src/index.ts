@@ -555,25 +555,40 @@ export async function buildApp(): Promise<FastifyInstance> {
       const approvedBy = body.approved_by || 'QA Sentinel Lead';
       const customBody = body.report_body || issueRow?.description;
 
-      const reportUpsert = await client.query(
-        `INSERT INTO reports (issue_id, title, report_body, status, approved_by, approved_at, email_to)
-         VALUES ($1, $2, $3, 'approved', $4, NOW(), $5)
-         ON CONFLICT (issue_id) DO UPDATE
-         SET status = 'approved',
-             approved_by = $4,
-             approved_at = NOW(),
-             report_body = COALESCE($3, reports.report_body),
-             updated_at = NOW()
-         RETURNING *`,
-        [
-          id, 
-          `Report: ${issueRow?.title || 'Audit Flaw'}`, 
-          customBody, 
-          approvedBy,
-          issueRow?.owner_email || process.env.TEST_EMAIL_RECIPIENT || 'saravanprasanna@gmail.com'
-        ]
+      const existingReport = await client.query(
+        'SELECT id FROM reports WHERE issue_id = $1',
+        [id]
       );
-      const updatedReport = reportUpsert.rows[0];
+
+      let updatedReport: any;
+      if (existingReport.rows.length > 0) {
+        const updateRes = await client.query(
+          `UPDATE reports
+           SET status = 'approved',
+               approved_by = $1,
+               approved_at = NOW(),
+               report_body = COALESCE($2, report_body),
+               updated_at = NOW()
+           WHERE issue_id = $3
+           RETURNING *`,
+          [approvedBy, body.report_body || null, id]
+        );
+        updatedReport = updateRes.rows[0];
+      } else {
+        const insertRes = await client.query(
+          `INSERT INTO reports (issue_id, status, report_title, report_body, approved_by, approved_at, email_to)
+           VALUES ($1, 'approved', $2, $3, $4, NOW(), $5)
+           RETURNING *`,
+          [
+            id,
+            `Report: ${issueRow?.title || 'Audit Flaw'}`,
+            customBody || 'Flaw verified by QA lead.',
+            approvedBy,
+            issueRow?.owner_email || process.env.TEST_EMAIL_RECIPIENT || 'saravanprasanna@gmail.com'
+          ]
+        );
+        updatedReport = insertRes.rows[0];
+      }
 
       await client.query('COMMIT');
 
