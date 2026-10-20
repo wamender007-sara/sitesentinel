@@ -257,17 +257,26 @@ export default function Dashboard() {
       {/* ── 1. Left Fixed Sidebar (Desktop >= 768px, 240px Width) ──────── */}
       <aside className="hidden md:flex flex-col w-60 fixed left-0 top-0 bottom-0 bg-white border-r border-zinc-200 z-30 select-none">
         {/* Workspace Brand Header */}
-        <div className="h-13 px-4 border-b border-zinc-200 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded bg-zinc-900 flex items-center justify-center text-white">
-              <ShieldCheck className="w-3.5 h-3.5" />
+        <div className="h-14 px-3.5 border-b border-zinc-200 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            {/* Precision Sentinel Emblem */}
+            <div className="relative w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-white shadow-xs flex-shrink-0">
+              <svg className="w-4.5 h-4.5 text-zinc-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L3 7v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7l-9-5z" />
+                <circle cx="12" cy="11.5" r="2.2" className="fill-emerald-400 stroke-emerald-400" />
+                <path d="M12 7.5v1.5m0 5v1.5m-3.5-3.5h1.5m4 0h1.5" strokeWidth="1.5" className="stroke-zinc-400" />
+              </svg>
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white" title="Engine Live" />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5 leading-none">
-                <span className="font-bold text-xs tracking-tight text-zinc-900">SiteSentinel</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Engine live" />
-              </div>
-              <span className="text-[10px] text-zinc-400">US East · Production</span>
+
+            {/* Brand Title & Description */}
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-sm tracking-tight text-zinc-950 truncate leading-none">
+                SiteSentinel
+              </span>
+              <span className="text-[11px] text-zinc-500 font-medium truncate mt-1 leading-none">
+                Autonomous Web Sentry
+              </span>
             </div>
           </div>
         </div>
