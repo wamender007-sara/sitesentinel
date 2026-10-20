@@ -44,6 +44,45 @@
       "maxDepth": 3,
       "contactEmail": "admin@resumereviewer.in",
       "enabled": true
+    },
+    {
+      "id": "target-prompt-optimizer",
+      "name": "Prompt Optimizer Vercel",
+      "domain": "prompt-optimizer-saravan1.vercel.app",
+      "allowedProtocols": ["https"],
+      "startUrls": [
+        "https://prompt-optimizer-saravan1.vercel.app"
+      ],
+      "maxPagesPerRun": 25,
+      "maxDepth": 3,
+      "contactEmail": "admin@resumereviewer.in",
+      "enabled": true
+    },
+    {
+      "id": "target-hackernews",
+      "name": "Hacker News",
+      "domain": "news.ycombinator.com",
+      "allowedProtocols": ["https"],
+      "startUrls": [
+        "https://news.ycombinator.com"
+      ],
+      "maxPagesPerRun": 25,
+      "maxDepth": 3,
+      "contactEmail": "admin@ycombinator.com",
+      "enabled": true
+    },
+    {
+      "id": "target-example",
+      "name": "Example Domain",
+      "domain": "example.com",
+      "allowedProtocols": ["http", "https"],
+      "startUrls": [
+        "https://example.com"
+      ],
+      "maxPagesPerRun": 25,
+      "maxDepth": 3,
+      "contactEmail": "admin@example.com",
+      "enabled": true
     }
   ]
 }

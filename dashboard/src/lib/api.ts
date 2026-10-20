@@ -2,7 +2,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'sitesentinel_dev_api_key_123';
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
-  const url = `${API_BASE}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+  const cleanBase = API_BASE.replace(/\/+$/, '');
+  const url = `${cleanBase}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
   const headers = {
     'Content-Type': 'application/json',
     'x-api-key': API_KEY,

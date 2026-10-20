@@ -24,10 +24,23 @@ export type AiAnalysis = z.infer<typeof AiAnalysisSchema>;
  */
 export function extractJsonFromResponse(rawText: string): any {
   const trimmed = rawText.trim();
-  // Strip markdown ```json ... ``` or ``` ... ```
-  const codeBlockMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-  const target = codeBlockMatch ? codeBlockMatch[1] : trimmed;
-  return JSON.parse(target);
+  // 1. Try markdown ```json ... ``` code fence
+  const codeBlockMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (codeBlockMatch) {
+    try {
+      return JSON.parse(codeBlockMatch[1].trim());
+    } catch {}
+  }
+  // 2. Try direct JSON parse
+  try {
+    return JSON.parse(trimmed);
+  } catch {}
+  // 3. Fallback: extract outermost JSON object { ... }
+  const jsonObjectMatch = trimmed.match(/\{[\s\S]*\}/);
+  if (jsonObjectMatch) {
+    return JSON.parse(jsonObjectMatch[0]);
+  }
+  throw new Error(`Unable to parse JSON from AI response: ${rawText.slice(0, 100)}...`);
 }
 
 /**
@@ -181,12 +194,25 @@ export async function analyzeIssue(
 
       // If status is pending_approval, also create or update corresponding record in reports table
       if (status === 'pending_approval') {
-        await pool.query(
-          `INSERT INTO reports (issue_id, status, report_title, report_body, report_body_tamil)
-           VALUES ($1, 'pending_approval', $2, $3, $4)
-           ON CONFLICT DO NOTHING`,
-          [issue.id, analysis.report_title, analysis.report_body, analysis.report_body_tamil || null]
-        );
+        const existingRep = await pool.query('SELECT id FROM reports WHERE issue_id = $1', [issue.id]);
+        if (existingRep.rows.length === 0) {
+          await pool.query(
+            `INSERT INTO reports (issue_id, status, report_title, report_body, report_body_tamil)
+             VALUES ($1, 'pending_approval', $2, $3, $4)`,
+            [issue.id, analysis.report_title, analysis.report_body, analysis.report_body_tamil || null]
+          );
+        } else {
+          await pool.query(
+            `UPDATE reports
+             SET report_title = $2,
+                 report_body = $3,
+                 report_body_tamil = $4,
+                 status = 'pending_approval',
+                 updated_at = NOW()
+             WHERE issue_id = $1`,
+            [issue.id, analysis.report_title, analysis.report_body, analysis.report_body_tamil || null]
+          );
+        }
       }
     } catch (dbErr) {
       console.error('[Gemini AI] Failed to save AI analysis to DB:', dbErr);

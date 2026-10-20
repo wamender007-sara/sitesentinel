@@ -197,12 +197,12 @@ export default function Dashboard() {
     }
   };
 
-  // Severity data for chart
+  // Severity data for chart (active, unresolved flaws)
   const severityChartData = [
-    { name: 'Critical', count: issues.filter(i => i.severity === 'critical').length, fill: PASTEL.rose.bar },
-    { name: 'High', count: issues.filter(i => i.severity === 'high').length, fill: PASTEL.peach.bar },
-    { name: 'Medium', count: issues.filter(i => i.severity === 'medium').length, fill: PASTEL.honey.bar },
-    { name: 'Low', count: issues.filter(i => i.severity === 'low').length, fill: PASTEL.sky.bar },
+    { name: 'Critical', count: issues.filter(i => i.severity === 'critical' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length, fill: PASTEL.rose.bar },
+    { name: 'High', count: issues.filter(i => i.severity === 'high' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length, fill: PASTEL.peach.bar },
+    { name: 'Medium', count: issues.filter(i => i.severity === 'medium' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length, fill: PASTEL.honey.bar },
+    { name: 'Low', count: issues.filter(i => i.severity === 'low' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length, fill: PASTEL.sky.bar },
   ];
 
   // Filtered issues
