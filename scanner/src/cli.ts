@@ -16,6 +16,8 @@ function parseArgs(args: string[]): { url?: string; all?: boolean; help?: boolea
     if (arg === '--url' || arg === '-u') {
       result.url = args[i + 1];
       i++;
+    } else if (arg.startsWith('http://') || arg.startsWith('https://')) {
+      result.url = arg;
     } else if (arg === '--all' || arg === 'scan:all') {
       result.all = true;
     } else if (arg === '--help' || arg === '-h') {

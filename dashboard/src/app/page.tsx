@@ -59,6 +59,15 @@ const PASTEL = {
   lavender: { bg: 'bg-[#f5f3ff]', text: 'text-[#6d28d9]', border: 'border-[#ddd6fe]', bar: '#a78bfa' },
 };
 
+const RANDOM_TARGETS_POOL = [
+  'https://www.resumereviewer.in',
+  'https://news.ycombinator.com',
+  'https://example.com',
+  'https://developer.mozilla.org',
+  'https://github.com',
+  'https://en.wikipedia.org/wiki/Main_Page',
+];
+
 export default function Dashboard() {
   const [lang, setLang] = useState<Language>('en');
   const t = translations[lang] || translations.en;
@@ -245,7 +254,7 @@ export default function Dashboard() {
             className="hidden md:flex items-center gap-2 text-xs font-semibold bg-gradient-to-r from-indigo-500 to-sky-500 hover:from-indigo-600 hover:to-sky-600 text-white px-3.5 py-2 rounded-xl shadow-sm transition disabled:opacity-50"
           >
             <Zap className="w-3.5 h-3.5 fill-current" />
-            <span>Fast Audit (localhost:4000)</span>
+            <span>Fast Audit (Testbed)</span>
           </button>
 
           {/* Settings Button (Language & Preferences) */}
@@ -463,13 +472,53 @@ export default function Dashboard() {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                      <span className="font-semibold text-[11px]">Quick Target:</span>
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-semibold text-[10px] uppercase tracking-wider text-slate-400">Presets:</span>
+                        <button
+                          type="button"
+                          onClick={() => setScanUrl('http://localhost:4000/')}
+                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border transition ${
+                            scanUrl.includes('localhost') 
+                              ? 'bg-indigo-600 text-white border-indigo-600' 
+                              : 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100'
+                          }`}
+                        >
+                          testbed (4000)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setScanUrl('https://www.resumereviewer.in')}
+                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border transition ${
+                            scanUrl.includes('resumereviewer') 
+                              ? 'bg-sky-600 text-white border-sky-600' 
+                              : 'bg-sky-50 text-sky-700 border-sky-100 hover:bg-sky-100'
+                          }`}
+                        >
+                          resumereviewer.in
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setScanUrl('https://news.ycombinator.com')}
+                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border transition ${
+                            scanUrl.includes('ycombinator') 
+                              ? 'bg-amber-600 text-white border-amber-600' 
+                              : 'bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100'
+                          }`}
+                        >
+                          hackernews
+                        </button>
+                      </div>
+
                       <button
-                        onClick={() => setScanUrl('http://localhost:4000/')}
-                        className="text-[11px] font-mono font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-xl transition"
+                        type="button"
+                        onClick={() => {
+                          const randomUrl = RANDOM_TARGETS_POOL[Math.floor(Math.random() * RANDOM_TARGETS_POOL.length)];
+                          setScanUrl(randomUrl);
+                        }}
+                        className="text-[10px] font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-100 px-2 py-0.5 rounded-lg transition flex items-center gap-1"
                       >
-                        localhost:4000 (Testbed)
+                        <span>🎲 Random Webpage</span>
                       </button>
                     </div>
 
@@ -867,15 +916,42 @@ export default function Dashboard() {
 
                 {/* Target URL */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                     <label className="font-bold text-slate-700 uppercase tracking-wider font-mono">Target URL</label>
-                    <button
-                      type="button"
-                      onClick={() => setScanUrl('http://localhost:4000/')}
-                      className="font-mono text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-xl transition"
-                    >
-                      localhost:4000 (Testbed)
-                    </button>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setScanUrl('http://localhost:4000/')}
+                        className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border transition ${
+                          scanUrl.includes('localhost')
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100'
+                        }`}
+                      >
+                        testbed (4000)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setScanUrl('https://www.resumereviewer.in')}
+                        className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border transition ${
+                          scanUrl.includes('resumereviewer')
+                            ? 'bg-sky-600 text-white border-sky-600'
+                            : 'bg-sky-50 text-sky-700 border-sky-100 hover:bg-sky-100'
+                        }`}
+                      >
+                        resumereviewer.in
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const randomUrl = RANDOM_TARGETS_POOL[Math.floor(Math.random() * RANDOM_TARGETS_POOL.length)];
+                          setScanUrl(randomUrl);
+                        }}
+                        className="text-[10px] font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-100 px-2 py-0.5 rounded-lg transition"
+                      >
+                        🎲 Random Webpage
+                      </button>
+                    </div>
                   </div>
 
                   <input

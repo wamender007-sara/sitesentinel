@@ -18,6 +18,32 @@
       "maxDepth": 3,
       "contactEmail": "admin@localhost.test",
       "enabled": true
+    },
+    {
+      "id": "target-resumereviewer",
+      "name": "ResumeReviewer AI",
+      "domain": "www.resumereviewer.in",
+      "allowedProtocols": ["http", "https"],
+      "startUrls": [
+        "https://www.resumereviewer.in"
+      ],
+      "maxPagesPerRun": 25,
+      "maxDepth": 3,
+      "contactEmail": "admin@resumereviewer.in",
+      "enabled": true
+    },
+    {
+      "id": "target-resumereviewer-apex",
+      "name": "ResumeReviewer AI (Apex)",
+      "domain": "resumereviewer.in",
+      "allowedProtocols": ["http", "https"],
+      "startUrls": [
+        "https://resumereviewer.in"
+      ],
+      "maxPagesPerRun": 25,
+      "maxDepth": 3,
+      "contactEmail": "admin@resumereviewer.in",
+      "enabled": true
     }
   ]
 }
