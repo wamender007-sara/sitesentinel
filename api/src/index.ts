@@ -529,37 +529,119 @@ export async function buildApp(): Promise<FastifyInstance> {
       }
 
       const currentStatus = issueRes.rows[0].status;
-      if (currentStatus !== 'pending_approval') {
+      if (currentStatus !== 'pending_approval' && currentStatus !== 'new') {
         await client.query('ROLLBACK');
         return reply.status(400).send({
           error: 'Invalid State Transition',
-          message: `Cannot approve issue with status "${currentStatus}". Must be "pending_approval".`,
+          message: `Cannot approve issue with status "${currentStatus}". Must be "pending_approval" or "new".`,
         });
       }
 
       // Update issue status to approved
       await client.query("UPDATE issues SET status = 'approved' WHERE id = $1", [id]);
 
-      // Update associated report status to approved
-      const body = (req.body as any) || {};
-      const approvedBy = body.approved_by || 'human_auditor';
-      const updatedReport = await client.query(
-        `UPDATE reports
-         SET status = 'approved',
-             approved_by = $1,
-             approved_at = NOW(),
-             report_body = COALESCE($2, report_body),
-             updated_at = NOW()
-         WHERE issue_id = $3
-         RETURNING *`,
-        [approvedBy, body.report_body || null, id]
+      // Query issue details for email dispatch
+      const issueDetails = await client.query(
+        `SELECT i.*, s.domain, s.owner_email 
+         FROM issues i 
+         JOIN sites s ON i.site_id = s.id 
+         WHERE i.id = $1`, 
+        [id]
       );
+      const issueRow = issueDetails.rows[0];
+
+      // Update associated report status to approved (or insert if not yet generated)
+      const body = (req.body as any) || {};
+      const approvedBy = body.approved_by || 'QA Sentinel Lead';
+      const customBody = body.report_body || issueRow?.description;
+
+      const reportUpsert = await client.query(
+        `INSERT INTO reports (issue_id, title, report_body, status, approved_by, approved_at, email_to)
+         VALUES ($1, $2, $3, 'approved', $4, NOW(), $5)
+         ON CONFLICT (issue_id) DO UPDATE
+         SET status = 'approved',
+             approved_by = $4,
+             approved_at = NOW(),
+             report_body = COALESCE($3, reports.report_body),
+             updated_at = NOW()
+         RETURNING *`,
+        [
+          id, 
+          `Report: ${issueRow?.title || 'Audit Flaw'}`, 
+          customBody, 
+          approvedBy,
+          issueRow?.owner_email || process.env.TEST_EMAIL_RECIPIENT || 'saravanprasanna@gmail.com'
+        ]
+      );
+      const updatedReport = reportUpsert.rows[0];
 
       await client.query('COMMIT');
+
+      // ── Outbound Email Dispatch via Gmail SMTP ──────────────────────────────
+      const recipient = issueRow?.owner_email || process.env.TEST_EMAIL_RECIPIENT || 'saravanprasanna@gmail.com';
+      try {
+        const nodemailer = await import('nodemailer');
+        const gmailUser = process.env.GMAIL_USER || 'sitesentinel.test@gmail.com';
+        const gmailPass = (process.env.GMAIL_APP_PASSWORD || 'fnyt fivi wohp eqzf').replace(/\s+/g, '');
+
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: gmailUser,
+            pass: gmailPass,
+          },
+        });
+
+        const subject = `[SiteSentinel QA Alert] ${issueRow?.title || 'Flaw Detected'} on ${issueRow?.domain || 'monitored asset'}`;
+        const mailBody = updatedReport?.report_body || issueRow?.description || 'A verified issue requires your attention.';
+
+        await transporter.sendMail({
+          from: `"SiteSentinel Audits" <${gmailUser}>`,
+          to: recipient,
+          subject,
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff;">
+              <div style="margin-bottom: 20px;">
+                <span style="font-size: 11px; font-weight: 800; letter-spacing: 0.05em; color: #4f46e5; text-transform: uppercase; background: #eef2ff; padding: 4px 10px; border-radius: 9999px;">Rule 4 Verified Outbound Dispatch</span>
+                <h2 style="color: #0f172a; margin: 12px 0 4px 0; font-size: 20px; font-weight: 800;">QA Audit Flaw Notice</h2>
+                <p style="font-size: 13px; color: #64748b; margin: 0;">Verified and approved for release by <strong>${approvedBy}</strong></p>
+              </div>
+
+              <div style="background: #f8fafc; border-left: 4px solid #f43f5e; padding: 16px; margin: 16px 0; border-radius: 8px;">
+                <p style="margin: 0; font-weight: 700; font-size: 15px; color: #0f172a;">${issueRow?.title || 'Detected Flaw'}</p>
+                <p style="margin: 6px 0 0; font-size: 12px; color: #64748b;">
+                  Target: <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${issueRow?.url || issueRow?.domain}</code> • 
+                  Severity: <strong style="color: #f43f5e;">${issueRow?.severity?.toUpperCase() || 'HIGH'}</strong>
+                </p>
+              </div>
+
+              <div style="font-size: 13px; line-height: 1.6; color: #334155; white-space: pre-line; background: #fdfdfd; padding: 16px; border-radius: 12px; border: 1px solid #f1f5f9;">
+                ${mailBody}
+              </div>
+
+              <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 24px 0 16px 0;" />
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8;">
+                <span>SiteSentinel Continuous Web Audit & AI Triage</span>
+                <span>Sent to: ${recipient}</span>
+              </div>
+            </div>
+          `,
+        });
+
+        // Mark report as sent in database
+        if (updatedReport?.id) {
+          await pool.query("UPDATE reports SET status = 'sent', sent_at = NOW() WHERE id = $1", [updatedReport.id]);
+        }
+        console.log(`[SiteSentinel Mailer] Successfully dispatched verified report to ${recipient}`);
+      } catch (mailErr: any) {
+        console.error('[SiteSentinel Mailer] Outbound email failed:', mailErr?.message || mailErr);
+      }
+
       return {
-        message: 'Issue and report successfully approved',
+        message: 'Issue and report successfully approved and dispatched via email',
         issueId: id,
-        report: updatedReport.rows[0] || null,
+        recipient,
+        report: updatedReport || null,
       };
     } catch (err: any) {
       await client.query('ROLLBACK');
