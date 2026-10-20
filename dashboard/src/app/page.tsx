@@ -182,7 +182,7 @@ export default function Dashboard() {
         body: JSON.stringify({ url, autoAnalyze: true }),
       });
       setScanStage(4);
-      setScanResult(res);
+      setScanResult({ ...res, targetUrl: url });
 
       confetti({
         particleCount: 40,
@@ -193,7 +193,7 @@ export default function Dashboard() {
 
       loadData();
     } catch (err: any) {
-      setScanResult({ error: err.message });
+      setScanResult({ error: err.message, targetUrl: url });
     } finally {
       clearTimeout(s1);
       clearTimeout(s2);
@@ -230,6 +230,7 @@ export default function Dashboard() {
   const activeReport = pendingReports.find(r => r.id === selectedReportId) || pendingReports[0] || null;
 
   const avgHealth = stats?.averageHealthScore ?? (sites.length > 0 ? Math.round(sites.reduce((acc, s) => acc + (s.health_score || 0), 0) / sites.length) : 100);
+  const criticalCount = stats?.criticalIssues ?? issues.filter(i => i.severity === 'critical' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length;
 
   const currentLangInfo = SUPPORTED_LANGUAGES.find(l => l.code === lang) || SUPPORTED_LANGUAGES[0];
 
@@ -264,9 +265,9 @@ export default function Dashboard() {
             <div>
               <div className="flex items-center gap-1.5 leading-none">
                 <span className="font-bold text-xs tracking-tight text-zinc-900">SiteSentinel</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Engine Live" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Engine live" />
               </div>
-              <span className="text-[10px] font-mono text-zinc-400">cluster-us-east · prod</span>
+              <span className="text-[10px] text-zinc-400">US East · Production</span>
             </div>
           </div>
         </div>
@@ -274,7 +275,7 @@ export default function Dashboard() {
         {/* Navigation Sections */}
         <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4 text-xs">
           <div>
-            <div className="px-2 pb-1.5 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+            <div className="px-2 pb-1.5 text-[10px] font-semibold text-zinc-400">
               Operations
             </div>
             <nav className="space-y-0.5">
@@ -314,8 +315,8 @@ export default function Dashboard() {
           </div>
 
           <div>
-            <div className="px-2 pb-1.5 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
-              Engine & Integrations
+            <div className="px-2 pb-1.5 text-[10px] font-semibold text-zinc-400">
+              Engine & integrations
             </div>
             <nav className="space-y-0.5">
               <button
@@ -330,7 +331,7 @@ export default function Dashboard() {
                   <Workflow className="w-3.5 h-3.5 text-zinc-400" />
                   <span>{t.automation}</span>
                 </div>
-                <span className="text-[10px] font-mono text-emerald-600 font-semibold">Ready</span>
+                <span className="text-[10px] text-emerald-600 font-semibold">Ready</span>
               </button>
 
               <button
@@ -341,21 +342,21 @@ export default function Dashboard() {
                   <Languages className="w-3.5 h-3.5 text-zinc-400" />
                   <span>{t.language}</span>
                 </div>
-                <span className="text-[10px] font-mono text-zinc-500">{currentLangInfo.nativeName}</span>
+                <span className="text-[10px] text-zinc-500">{currentLangInfo.nativeName}</span>
               </button>
             </nav>
           </div>
         </div>
 
         {/* Sidebar Footer Identity */}
-        <div className="p-3 border-t border-zinc-200 bg-zinc-50/60 flex items-center justify-between text-[11px] font-mono text-zinc-500">
+        <div className="p-3 border-t border-zinc-200 bg-zinc-50/60 flex items-center justify-between text-[11px] text-zinc-500">
           <div className="truncate">
             <p className="font-semibold text-zinc-700 truncate">lead-sre@sitesentinel.dev</p>
             <p className="text-[10px] text-zinc-400">Rule 4 Sentinel v1.4</p>
           </div>
           <button
             onClick={loadData}
-            title="Sync Data"
+            title="Sync data"
             className="p-1.5 rounded hover:bg-zinc-200 text-zinc-500 hover:text-zinc-900 transition"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -403,36 +404,42 @@ export default function Dashboard() {
           </div>
 
           {/* Right Header Status Line: Rule 4 Human Guard + Actions */}
-          <div className="flex items-center gap-3">
-            {/* Rule 4 Compact Inline Status Chip */}
-            <div 
-              onClick={() => setActiveTab('review')}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 cursor-pointer transition select-none"
-              title="Rule 4 Human-in-the-Loop Gate"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className="font-medium text-zinc-600">Rule 4 Active:</span>
-              <span className="font-semibold text-zinc-900">
-                {pendingReports.length > 0 ? `${pendingReports.length} pending review` : 'All clear'}
-              </span>
-              {pendingReports.length > 0 && (
-                <ArrowUpRight className="w-3 h-3 text-zinc-400" />
-              )}
-            </div>
+          <div className="flex items-center gap-2.5">
+            {/* Rule 4 Prominent Action Pill */}
+            {pendingReports.length > 0 ? (
+              <button 
+                onClick={() => setActiveTab('review')}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-400 hover:bg-amber-500 text-zinc-950 transition shadow-xs select-none"
+                title="Review pending reports before outbound dispatch"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                <span><span className="font-mono">{pendingReports.length}</span> pending review</span>
+                <ArrowUpRight className="w-3.5 h-3.5 text-zinc-900" />
+              </button>
+            ) : (
+              <div 
+                onClick={() => setActiveTab('review')}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 cursor-pointer text-zinc-600 transition select-none"
+                title="Rule 4 human-in-the-loop gate"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Rule 4 active: all clear</span>
+              </div>
+            )}
 
             {/* Language Switch Button */}
             <button
               onClick={() => setShowSettings(true)}
-              className="px-2 py-1 rounded text-xs border border-zinc-200 hover:bg-zinc-50 text-zinc-700 flex items-center gap-1.5 font-mono"
+              className="px-2 py-1 rounded text-xs border border-zinc-200 hover:bg-zinc-50 text-zinc-700 flex items-center gap-1.5"
             >
               <span>{currentLangInfo.flag}</span>
-              <span className="hidden sm:inline">{currentLangInfo.code.toUpperCase()}</span>
+              <span className="hidden sm:inline uppercase text-[11px] font-medium">{currentLangInfo.code}</span>
             </button>
 
             {/* Quick Refresh */}
             <button
               onClick={loadData}
-              title="Refresh Telemetry"
+              title="Refresh telemetry"
               className="p-1 rounded text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -454,46 +461,46 @@ export default function Dashboard() {
                 transition={{ duration: 0.15 }}
                 className="space-y-6"
               >
-                {/* Asymmetric KPI Metric Grid (Hero Average Health + 3 Compact Units) */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                {/* Asymmetric KPI Metric Grid (Hero Average Health + 3 Tight Secondary Cards + Action Banner) */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
                   {/* Hero Metric Unit: Average Health Score (5 Columns) */}
                   <div className="lg:col-span-5 p-5 bg-white border border-zinc-200 rounded-md flex flex-col justify-between space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                        {t.avgHealth}
+                      <span className="text-xs font-semibold text-zinc-600">
+                        Average health
                       </span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
                         avgHealth >= 80 
                           ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
                           : 'bg-amber-50 text-amber-800 border-amber-200'
                       }`}>
-                        {avgHealth >= 80 ? 'Grade A · Within SLA' : 'Grade C · Needs Attention'}
+                        {avgHealth >= 80 ? 'Grade A · within SLA' : 'Grade C · needs attention'}
                       </span>
                     </div>
 
-                    <div className="flex items-baseline gap-3">
+                    <div className="flex items-baseline gap-2">
                       <span className="text-5xl font-extrabold tracking-tight font-mono text-zinc-900">
                         {avgHealth}
                       </span>
                       <span className="text-sm font-mono text-zinc-400">/ 100</span>
-                      <span className="text-xs font-mono text-emerald-600 font-semibold ml-auto">
-                        +2.4% vs 7d avg
+                      <span className="text-xs text-zinc-500 font-medium ml-auto">
+                        Target SLA: <span className="font-mono font-semibold text-zinc-700">90</span>
                       </span>
                     </div>
 
                     {/* Sub-Score Breakdown Bars */}
-                    <div className="space-y-1.5 pt-2 border-t border-zinc-100 text-[11px] font-mono text-zinc-500">
+                    <div className="space-y-1.5 pt-2 border-t border-zinc-100 text-[11px] text-zinc-600">
                       <div className="flex justify-between items-center">
-                        <span>WCAG 2.1 Contrast & Semantics</span>
-                        <span className="font-semibold text-zinc-700">96%</span>
+                        <span>WCAG 2.1 contrast & semantics</span>
+                        <span className="font-mono font-semibold text-zinc-800">96%</span>
                       </div>
                       <div className="w-full bg-zinc-100 h-1 rounded-full overflow-hidden">
                         <div className="bg-zinc-900 h-full rounded-full" style={{ width: '96%' }} />
                       </div>
 
                       <div className="flex justify-between items-center pt-1">
-                        <span>Latency & TTFB Response</span>
-                        <span className="font-semibold text-zinc-700">89%</span>
+                        <span>Latency & TTFB response</span>
+                        <span className="font-mono font-semibold text-zinc-800">89%</span>
                       </div>
                       <div className="w-full bg-zinc-100 h-1 rounded-full overflow-hidden">
                         <div className="bg-zinc-900 h-full rounded-full" style={{ width: '89%' }} />
@@ -502,54 +509,91 @@ export default function Dashboard() {
 
                     <p className="text-xs text-zinc-500 pt-1">
                       {pendingReports.length > 0 
-                        ? `${pendingReports.length} verified flaw reports waiting for human QA approval.` 
-                        : 'All monitored targets nominal with zero blocking defects.'}
+                        ? `${pendingReports.length} reports waiting for human approval before Gmail dispatch.` 
+                        : 'All monitored endpoints nominal with zero blocking defects.'}
                     </p>
                   </div>
 
-                  {/* 3 Compact Secondary Metrics (7 Columns) */}
-                  <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {/* Compact Card 1: Monitored Targets */}
-                    <div className="p-4 bg-white border border-zinc-200 rounded-md flex flex-col justify-between space-y-2">
-                      <span className="text-xs font-medium text-zinc-500">Monitored Targets</span>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-3xl font-extrabold font-mono text-zinc-900">
-                          {stats?.totalSites ?? sites.length}
-                        </span>
-                        <span className="text-xs font-mono text-zinc-400">endpoints</span>
+                  {/* 3 Tight Secondary Metrics + Action Banner (7 Columns) */}
+                  <div className="lg:col-span-7 flex flex-col justify-between gap-3">
+                    {/* 3 Tight Secondary Cards in a Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* Compact Card 1: Monitored Targets */}
+                      <div className="p-3.5 bg-white border border-zinc-200 rounded-md space-y-1.5">
+                        <span className="text-xs font-medium text-zinc-500 block">Monitored targets</span>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-3xl font-extrabold font-mono text-zinc-900">
+                            {stats?.totalSites ?? sites.length}
+                          </span>
+                          <span className="text-xs text-zinc-400">endpoints</span>
+                        </div>
+                        <p className="text-[11px] text-zinc-500 leading-snug">
+                          {sites.length} target domains configured in targets.json.
+                        </p>
                       </div>
-                      <p className="text-[11px] text-zinc-500 leading-snug">
-                        Enrolled in automated hourly Playwright inspection cycle.
-                      </p>
+
+                      {/* Compact Card 2: Active Flaws */}
+                      <div className="p-3.5 bg-white border border-zinc-200 rounded-md space-y-1.5">
+                        <span className="text-xs font-medium text-zinc-500 block">Active flaws</span>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-3xl font-extrabold font-mono text-zinc-900">
+                            {stats?.openIssues ?? issues.length}
+                          </span>
+                          <span className="text-xs text-zinc-400">detected</span>
+                        </div>
+                        <p className="text-[11px] text-zinc-500 leading-snug">
+                          {issues.filter(i => i.severity === 'high').length} high severity · {issues.filter(i => i.severity === 'medium').length} medium.
+                        </p>
+                      </div>
+
+                      {/* Compact Card 3: Critical Issues */}
+                      <div className="p-3.5 bg-white border border-zinc-200 rounded-md space-y-1.5">
+                        <span className="text-xs font-medium text-zinc-500 block">Critical issues</span>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-3xl font-extrabold font-mono text-red-700">
+                            {criticalCount}
+                          </span>
+                          <span className="text-xs text-red-600 font-semibold">blocking</span>
+                        </div>
+                        <p className="text-[11px] text-red-700 font-medium leading-snug">
+                          {criticalCount > 0 ? `${criticalCount} critical issues block release.` : 'No critical issues blocking release.'}
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Compact Card 2: Active Flaws */}
-                    <div className="p-4 bg-white border border-zinc-200 rounded-md flex flex-col justify-between space-y-2">
-                      <span className="text-xs font-medium text-zinc-500">Indexed Flaws</span>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-3xl font-extrabold font-mono text-zinc-900">
-                          {stats?.openIssues ?? issues.length}
-                        </span>
-                        <span className="text-xs font-mono text-zinc-400">issues</span>
+                    {/* Prominent Action Banner for Pending Reviews */}
+                    {pendingReports.length > 0 ? (
+                      <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-md flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded bg-amber-400 text-zinc-950 flex items-center justify-center flex-shrink-0 font-bold">
+                            <AlertTriangle className="w-4 h-4" />
+                          </div>
+                          <div className="truncate">
+                            <p className="text-xs font-semibold text-zinc-900">
+                              <span className="font-mono">{pendingReports.length}</span> pending review before dispatch
+                            </p>
+                            <p className="text-[11px] text-zinc-600 truncate">
+                              {criticalCount > 0 ? `${criticalCount} critical issues require verification` : 'Verified flaw reports awaiting human sign-off'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('review')}
+                          className="px-3.5 py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs transition flex items-center gap-1.5 flex-shrink-0 shadow-xs"
+                        >
+                          <span>Review queue</span>
+                          <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400" />
+                        </button>
                       </div>
-                      <p className="text-[11px] text-zinc-500 leading-snug">
-                        Deduplicated by SHA-256 DOM fingerprinting.
-                      </p>
-                    </div>
-
-                    {/* Compact Card 3: Critical Issues */}
-                    <div className="p-4 bg-white border border-zinc-200 rounded-md flex flex-col justify-between space-y-2">
-                      <span className="text-xs font-medium text-zinc-500">Critical Issues</span>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-3xl font-extrabold font-mono text-red-700">
-                          {stats?.criticalIssues ?? issues.filter(i => i.severity === 'critical').length}
-                        </span>
-                        <span className="text-xs font-mono text-red-600 font-semibold">blocking</span>
+                    ) : (
+                      <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-md flex items-center justify-between text-xs text-zinc-600">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span>Rule 4 gate: all verified reports reviewed and dispatched</span>
+                        </div>
+                        <span className="text-[11px] text-zinc-400">Queue clear</span>
                       </div>
-                      <p className="text-[11px] text-red-700 font-medium leading-snug">
-                        Immediate triage required before production release.
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
 
@@ -560,15 +604,15 @@ export default function Dashboard() {
                   <div className="lg:col-span-7 p-5 bg-white border border-zinc-200 rounded-md space-y-4">
                     <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                       <div>
-                        <h3 className="text-xs font-semibold text-zinc-900 uppercase tracking-wider">
-                          Flaw Severity Breakdown
+                        <h3 className="text-xs font-semibold text-zinc-900">
+                          Flaw severity breakdown
                         </h3>
                         <p className="text-xs text-zinc-400 mt-0.5">
-                          Quantified from automated accessibility and runtime telemetry passes
+                          Active issues by severity across all monitored endpoints
                         </p>
                       </div>
-                      <span className="text-[11px] font-mono text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded">
-                        Telemetry Live
+                      <span className="text-[11px] text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded">
+                        Live telemetry
                       </span>
                     </div>
 
@@ -595,10 +639,10 @@ export default function Dashboard() {
                             content={({ active, payload, label }) => {
                               if (active && payload && payload.length) {
                                 return (
-                                  <div className="bg-white px-3 py-2 rounded border border-zinc-200 shadow-sm text-xs font-mono">
+                                  <div className="bg-white px-3 py-2 rounded border border-zinc-200 shadow-sm text-xs">
                                     <p className="font-bold text-zinc-900">{label}</p>
                                     <p className="text-zinc-600 mt-0.5">
-                                      Count: <span className="font-bold text-zinc-900">{payload[0].value}</span>
+                                      Count: <span className="font-mono font-bold text-zinc-900">{payload[0].value}</span>
                                     </p>
                                   </div>
                                 );
@@ -620,18 +664,18 @@ export default function Dashboard() {
                   {/* Instant Audit Launcher (5 Columns) */}
                   <div className="lg:col-span-5 p-5 bg-white border border-zinc-200 rounded-md space-y-4">
                     <div className="border-b border-zinc-100 pb-3">
-                      <h3 className="text-xs font-semibold text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <h3 className="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
                         <Zap className="w-3.5 h-3.5 text-zinc-900" />
-                        <span>Instant Target Audit</span>
+                        <span>Instant target audit</span>
                       </h3>
                       <p className="text-xs text-zinc-400 mt-0.5">
-                        Launches headless Chromium with DOM, WCAG 2.1 AA, and latency probes.
+                        Runs Playwright crawl with axe-core a11y, HTTP status, and console error checks.
                       </p>
                     </div>
 
                     <div className="space-y-3">
                       <div>
-                        <label className="text-[11px] font-mono text-zinc-500 block mb-1">Target Endpoint URL</label>
+                        <label className="text-[11px] text-zinc-500 block mb-1">Target endpoint URL</label>
                         <input
                           type="url"
                           value={scanUrl}
@@ -653,7 +697,7 @@ export default function Dashboard() {
                             key={preset.label}
                             type="button"
                             onClick={() => setScanUrl(preset.url)}
-                            className={`px-2 py-0.5 rounded text-[11px] font-mono transition border ${
+                            className={`px-2 py-0.5 rounded text-[11px] transition border ${
                               scanUrl.includes(preset.label.replace('.in', ''))
                                 ? 'bg-zinc-900 text-white border-zinc-900 font-semibold'
                                 : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
@@ -668,7 +712,7 @@ export default function Dashboard() {
                             const randomUrl = RANDOM_TARGETS_POOL[Math.floor(Math.random() * RANDOM_TARGETS_POOL.length)];
                             setScanUrl(randomUrl);
                           }}
-                          className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-600 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200"
+                          className="px-2 py-0.5 rounded text-[11px] text-zinc-600 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200"
                         >
                           🎲 Random
                         </button>
@@ -683,12 +727,12 @@ export default function Dashboard() {
                         {scanning ? (
                           <>
                             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            <span>Auditing Target...</span>
+                            <span>Auditing target...</span>
                           </>
                         ) : (
                           <>
                             <Send className="w-3.5 h-3.5" />
-                            <span>Launch Target Audit</span>
+                            <span>Launch target audit</span>
                           </>
                         )}
                       </button>
@@ -704,10 +748,20 @@ export default function Dashboard() {
                       )}
 
                       {scanResult && (
-                        <div className={`p-3 rounded text-xs font-mono ${
-                          scanResult.error ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        <div className={`p-3 rounded text-xs border ${
+                          scanResult.error 
+                            ? 'bg-red-50 text-red-800 border-red-200' 
+                            : 'bg-emerald-50 text-emerald-900 border-emerald-200'
                         }`}>
-                          {scanResult.error ? `Failed: ${scanResult.error}` : `✓ Audit Complete: Health Score ${scanResult.healthScore}/100 • ${scanResult.issuesDetected} flaws detected.`}
+                          <div className="font-medium">
+                            {scanResult.error ? (
+                              <span>Audit failed for <code className="font-mono">{scanResult.targetUrl || scanUrl}</code>: {scanResult.error}</span>
+                            ) : (
+                              <span>
+                                ✓ Audit complete for <code className="font-mono">{scanResult.targetUrl || scanUrl}</code>: Health score <span className="font-mono font-bold">{scanResult.healthScore ?? 100}/100</span> with <span className="font-mono font-bold">{scanResult.issuesDetected ?? 0}</span> issues detected.
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -717,8 +771,8 @@ export default function Dashboard() {
                 {/* Bottom Overview Section: Recent Detected Flaws Mini-Table */}
                 <div className="bg-white border border-zinc-200 rounded-md p-5 space-y-3">
                   <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                    <h3 className="text-xs font-semibold text-zinc-900 uppercase tracking-wider">
-                      Recent Flaw Telemetry
+                    <h3 className="text-xs font-semibold text-zinc-900">
+                      Recent flaw telemetry
                     </h3>
                     <button 
                       onClick={() => setActiveTab('issues')}
@@ -730,12 +784,12 @@ export default function Dashboard() {
                   </div>
 
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs font-mono">
-                      <thead className="bg-zinc-50 text-[10px] text-zinc-400 uppercase tracking-wider border-b border-zinc-200">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-zinc-50 text-[10px] text-zinc-500 border-b border-zinc-200">
                         <tr>
                           <th className="px-3 py-2 font-semibold">Severity</th>
-                          <th className="px-3 py-2 font-semibold">Flaw Type</th>
-                          <th className="px-3 py-2 font-semibold">Title & Evidence URL</th>
+                          <th className="px-3 py-2 font-semibold">Flaw category</th>
+                          <th className="px-3 py-2 font-semibold">Title & evidence URL</th>
                           <th className="px-3 py-2 font-semibold text-right">Action</th>
                         </tr>
                       </thead>
@@ -755,7 +809,7 @@ export default function Dashboard() {
                             <td className="px-3 py-2.5 text-zinc-700">{issue.type}</td>
                             <td className="px-3 py-2.5 font-sans">
                               <p className="font-semibold text-zinc-900 leading-tight">{issue.title}</p>
-                              <p className="text-[11px] font-mono text-zinc-400 truncate max-w-md mt-0.5">{formatUrl(issue.url)}</p>
+                              <p className="text-[11px] font-mono text-zinc-500 truncate max-w-md mt-0.5">{formatUrl(issue.url)}</p>
                             </td>
                             <td className="px-3 py-2.5 text-right font-sans">
                               <button
@@ -801,9 +855,9 @@ export default function Dashboard() {
                     
                     {/* Left Master List (4 Columns) */}
                     <div className="lg:col-span-4 space-y-2">
-                      <div className="px-1 text-xs font-semibold text-zinc-500 uppercase tracking-wider flex justify-between items-center">
-                        <span>Pending Approvals</span>
-                        <span className="font-mono text-[11px] text-zinc-400">{pendingReports.length} reports</span>
+                      <div className="px-1 text-xs font-semibold text-zinc-500 flex justify-between items-center">
+                        <span>Pending approvals</span>
+                        <span className="text-[11px] text-zinc-400"><span className="font-mono">{pendingReports.length}</span> reports</span>
                       </div>
 
                       <div className="space-y-1.5">
@@ -820,7 +874,7 @@ export default function Dashboard() {
                               }`}
                             >
                               <div className="flex items-center justify-between gap-2">
-                                <span className={`px-1.5 py-0.2 text-[9px] font-mono font-bold uppercase rounded border ${
+                                <span className={`px-1.5 py-0.2 text-[9px] font-bold uppercase rounded border ${
                                   report.severity === 'critical' ? SEVERITY.critical.bg + ' ' + SEVERITY.critical.text + ' ' + SEVERITY.critical.border :
                                   report.severity === 'high' ? SEVERITY.high.bg + ' ' + SEVERITY.high.text + ' ' + SEVERITY.high.border :
                                   report.severity === 'medium' ? SEVERITY.medium.bg + ' ' + SEVERITY.medium.text + ' ' + SEVERITY.medium.border :
@@ -828,7 +882,7 @@ export default function Dashboard() {
                                 }`}>
                                   {report.severity}
                                 </span>
-                                <span className="text-[10px] font-mono text-zinc-400 truncate max-w-[120px]">
+                                <span className="text-[10px] text-zinc-400 truncate max-w-[120px]">
                                   {report.type}
                                 </span>
                               </div>
@@ -851,7 +905,7 @@ export default function Dashboard() {
                         <div className="space-y-3 pb-4 border-b border-zinc-100">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
                                 activeReport.severity === 'critical' ? SEVERITY.critical.bg + ' ' + SEVERITY.critical.text + ' ' + SEVERITY.critical.border :
                                 activeReport.severity === 'high' ? SEVERITY.high.bg + ' ' + SEVERITY.high.text + ' ' + SEVERITY.high.border :
                                 activeReport.severity === 'medium' ? SEVERITY.medium.bg + ' ' + SEVERITY.medium.text + ' ' + SEVERITY.medium.border :
@@ -859,16 +913,16 @@ export default function Dashboard() {
                               }`}>
                                 {activeReport.severity}
                               </span>
-                              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-100 text-zinc-700 border border-zinc-200">
+                              <span className="px-2 py-0.5 rounded text-[10px] bg-zinc-100 text-zinc-700 border border-zinc-200">
                                 {activeReport.type}
                               </span>
-                              <span className="text-[11px] font-mono text-zinc-400">
-                                Rule 4 Sentinel QA Gate
+                              <span className="text-[11px] text-zinc-400">
+                                Rule 4 human QA gate
                               </span>
                             </div>
 
-                            <span className="text-[10px] font-mono text-zinc-400">
-                              ID: {activeReport.issue_id ? activeReport.issue_id.slice(0, 8) : '001'}
+                            <span className="text-[10px] text-zinc-400">
+                              ID: <span className="font-mono">{activeReport.issue_id ? activeReport.issue_id.slice(0, 8) : '001'}</span>
                             </span>
                           </div>
 
@@ -876,19 +930,19 @@ export default function Dashboard() {
                             {activeReport.report_title}
                           </h2>
 
-                          <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-500 bg-zinc-50 px-2.5 py-1 rounded border border-zinc-200 w-fit">
+                          <div className="flex items-center gap-1.5 text-xs text-zinc-500 bg-zinc-50 px-2.5 py-1 rounded border border-zinc-200 w-fit">
                             <Globe2 className="w-3.5 h-3.5 text-zinc-400" />
-                            <span className="select-all">{formatUrl(activeReport.url)}</span>
+                            <span className="font-mono select-all">{formatUrl(activeReport.url)}</span>
                           </div>
                         </div>
 
                         {/* 2. Destination & Action Control Panel */}
                         <div className="p-3 bg-zinc-50 border border-zinc-200 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="flex items-center gap-2 text-xs font-mono text-zinc-700">
+                          <div className="flex items-center gap-2 text-xs text-zinc-700">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-zinc-500 font-sans">Recipient:</span>
-                            <span className="font-bold text-zinc-900">saravanprasanna@gmail.com</span>
-                            <span className="text-[10px] font-bold text-zinc-500 px-1.5 py-0.2 bg-zinc-200 rounded">
+                            <span className="text-zinc-500">Recipient:</span>
+                            <span className="font-mono font-bold text-zinc-900">saravanprasanna@gmail.com</span>
+                            <span className="text-[10px] font-semibold text-zinc-500 px-1.5 py-0.2 bg-zinc-200 rounded">
                               SMTP
                             </span>
                           </div>
@@ -898,14 +952,14 @@ export default function Dashboard() {
                               onClick={() => handleReject(activeReport.issue_id)}
                               className="px-3 py-1.5 rounded text-xs font-medium text-red-700 bg-white hover:bg-red-50 border border-red-200 transition"
                             >
-                              Mark as False Positive
+                              Mark as false positive
                             </button>
                             <button
                               onClick={() => handleApprove(activeReport.issue_id)}
                               className="px-4 py-1.5 rounded text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 transition flex items-center gap-1.5"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Approve & Dispatch Mail</span>
+                              <span>Approve & dispatch email</span>
                             </button>
                           </div>
                         </div>
@@ -920,7 +974,7 @@ export default function Dashboard() {
                                   !nativeReportPreview ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900'
                                 }`}
                               >
-                                English Dispatch Draft
+                                English dispatch draft
                               </button>
                               {activeReport.report_body_tamil && (
                                 <button
@@ -933,8 +987,8 @@ export default function Dashboard() {
                                 </button>
                               )}
                             </div>
-                            <span className="text-[10px] font-mono text-zinc-400 uppercase">
-                              Editable Markdown Payload
+                            <span className="text-[10px] text-zinc-400">
+                              Editable markdown payload
                             </span>
                           </div>
 
@@ -947,7 +1001,7 @@ export default function Dashboard() {
                                 className="w-full text-xs font-mono bg-zinc-50 border border-zinc-200 rounded p-3 text-zinc-900 focus:outline-none focus:border-zinc-900 leading-relaxed"
                               />
                               <p className="text-[11px] text-zinc-400">
-                                Rule 4 Gate: Changes save automatically and dispatch directly to saravanprasanna@gmail.com upon approval.
+                                Rule 4 gate: Changes save automatically and dispatch directly to saravanprasanna@gmail.com upon approval.
                               </p>
                             </div>
                           ) : (
@@ -959,13 +1013,13 @@ export default function Dashboard() {
 
                         {/* 4. Technical Telemetry Evidence */}
                         {activeReport.evidence && (
-                          <div className="p-3 rounded bg-zinc-50 border border-zinc-200 space-y-1 font-mono text-xs">
-                            <span className="font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">Telemetry Evidence</span>
+                          <div className="p-3 rounded bg-zinc-50 border border-zinc-200 space-y-1 text-xs">
+                            <span className="font-semibold text-zinc-500 text-[10px]">Telemetry evidence</span>
                             {activeReport.evidence.selector && (
-                              <p className="text-zinc-700 truncate"><span className="text-zinc-400">Selector:</span> <code>{activeReport.evidence.selector}</code></p>
+                              <p className="text-zinc-700 truncate"><span className="text-zinc-400">Selector:</span> <code className="font-mono">{activeReport.evidence.selector}</code></p>
                             )}
                             {activeReport.evidence.ruleId && (
-                              <p className="text-zinc-700"><span className="text-zinc-400">Rule ID:</span> <code>{activeReport.evidence.ruleId}</code></p>
+                              <p className="text-zinc-700"><span className="text-zinc-400">Rule ID:</span> <code className="font-mono">{activeReport.evidence.ruleId}</code></p>
                             )}
                           </div>
                         )}
@@ -987,22 +1041,22 @@ export default function Dashboard() {
                 className="bg-white border border-zinc-200 rounded-md p-5 space-y-4"
               >
                 <div className="border-b border-zinc-100 pb-3">
-                  <h3 className="text-xs font-semibold text-zinc-900 uppercase tracking-wider">
-                    Monitored Target Endpoints
+                  <h3 className="text-xs font-semibold text-zinc-900">
+                    Monitored target endpoints
                   </h3>
                   <p className="text-xs text-zinc-400 mt-0.5">
-                    Registered domain hosts under automated continuous Playwright security audits
+                    Target hosts configured in allowlist for automated auditing
                   </p>
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs font-mono">
-                    <thead className="bg-zinc-50 text-[10px] text-zinc-400 uppercase tracking-wider border-b border-zinc-200">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-zinc-50 text-[10px] text-zinc-500 border-b border-zinc-200">
                       <tr>
-                        <th className="px-4 py-2.5 font-semibold">Domain Target</th>
-                        <th className="px-4 py-2.5 font-semibold">Alert Recipient</th>
-                        <th className="px-4 py-2.5 font-semibold">Health Score</th>
-                        <th className="px-4 py-2.5 font-semibold">Active Flaws</th>
+                        <th className="px-4 py-2.5 font-semibold">Domain target</th>
+                        <th className="px-4 py-2.5 font-semibold">Alert recipient</th>
+                        <th className="px-4 py-2.5 font-semibold">Health score</th>
+                        <th className="px-4 py-2.5 font-semibold">Active flaws</th>
                         <th className="px-4 py-2.5 text-right font-semibold">Action</th>
                       </tr>
                     </thead>
@@ -1011,19 +1065,19 @@ export default function Dashboard() {
                         <tr key={site.id} className="hover:bg-zinc-50/60 transition">
                           <td className="px-4 py-3 font-semibold text-zinc-900 flex items-center gap-2">
                             <Globe2 className="w-3.5 h-3.5 text-zinc-400" />
-                            <span>{site.domain}</span>
+                            <span className="font-mono">{site.domain}</span>
                           </td>
-                          <td className="px-4 py-3 text-zinc-500 font-sans">
-                            {site.owner_email || 'saravanprasanna@gmail.com'}
+                          <td className="px-4 py-3 text-zinc-600">
+                            <span className="font-mono">{site.owner_email || 'saravanprasanna@gmail.com'}</span>
                           </td>
                           <td className="px-4 py-3">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                               site.health_score >= 80 ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'
                             }`}>
-                              {site.health_score}/100
+                              <span className="font-mono">{site.health_score}/100</span>
                             </span>
                           </td>
-                          <td className="px-4 py-3 font-semibold text-zinc-800">{site.open_issues_count || 0}</td>
+                          <td className="px-4 py-3 font-mono font-semibold text-zinc-800">{site.open_issues_count || 0}</td>
                           <td className="px-4 py-3 text-right">
                             <button
                               onClick={() => {
@@ -1033,17 +1087,17 @@ export default function Dashboard() {
                                 handleTriggerScan(fullUrl, site.id);
                               }}
                               disabled={scanning}
-                              className="px-2.5 py-1 rounded text-[11px] font-medium bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200 transition font-sans disabled:opacity-50"
+                              className="px-2.5 py-1 rounded text-[11px] font-medium bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200 transition disabled:opacity-50"
                             >
-                              {auditingSiteId === site.id ? 'Auditing...' : t.auditNow}
+                              {auditingSiteId === site.id ? 'Auditing...' : 'Audit now'}
                             </button>
                           </td>
                         </tr>
                       ))}
                       {sites.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-4 py-8 text-center text-zinc-400 font-sans text-xs">
-                            No endpoints enrolled. Run your first audit from the Live Radar Audit view.
+                          <td colSpan={5} className="px-4 py-8 text-center text-zinc-400 text-xs">
+                            No endpoints enrolled. Run your first audit from the new scan tab.
                           </td>
                         </tr>
                       )}
@@ -1079,11 +1133,11 @@ export default function Dashboard() {
                   {/* Severity Filter Pills */}
                   <div className="flex items-center gap-1 bg-white p-1 rounded border border-zinc-200">
                     {[
-                      { id: 'all', label: t.filterAll },
-                      { id: 'critical', label: t.filterCritical },
-                      { id: 'high', label: t.filterHigh },
-                      { id: 'medium', label: t.filterMedium },
-                      { id: 'low', label: t.filterLow },
+                      { id: 'all', label: 'All' },
+                      { id: 'critical', label: 'Critical' },
+                      { id: 'high', label: 'High' },
+                      { id: 'medium', label: 'Medium' },
+                      { id: 'low', label: 'Low' },
                     ].map(f => (
                       <button
                         key={f.id}
@@ -1102,14 +1156,14 @@ export default function Dashboard() {
 
                 {/* Flat Issues Table */}
                 <div className="bg-white border border-zinc-200 rounded-md overflow-hidden">
-                  <table className="w-full text-left text-xs font-mono">
-                    <thead className="bg-zinc-50 text-[10px] text-zinc-400 uppercase tracking-wider border-b border-zinc-200">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-zinc-50 text-[10px] text-zinc-500 border-b border-zinc-200">
                       <tr>
-                        <th className="px-4 py-2.5 font-semibold">{t.severity}</th>
-                        <th className="px-4 py-2.5 font-semibold">Flaw Category</th>
-                        <th className="px-4 py-2.5 font-semibold">Title & Evidence URL</th>
+                        <th className="px-4 py-2.5 font-semibold">Severity</th>
+                        <th className="px-4 py-2.5 font-semibold">Flaw category</th>
+                        <th className="px-4 py-2.5 font-semibold">Title & evidence URL</th>
                         <th className="px-4 py-2.5 font-semibold">Occurrences</th>
-                        <th className="px-4 py-2.5 font-semibold">{t.status}</th>
+                        <th className="px-4 py-2.5 font-semibold">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100">
@@ -1126,13 +1180,13 @@ export default function Dashboard() {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-zinc-700">{issue.type}</td>
-                          <td className="px-4 py-3 font-sans">
-                            <p className="font-semibold text-zinc-900 leading-tight">{issue.title}</p>
-                            <p className="text-[11px] font-mono text-zinc-400 truncate max-w-lg mt-0.5">{formatUrl(issue.url)}</p>
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-zinc-800">{issue.occurrences}x</td>
                           <td className="px-4 py-3">
-                            <span className="font-mono text-xs px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 border border-zinc-200">
+                            <p className="font-semibold text-zinc-900 leading-tight">{issue.title}</p>
+                            <p className="text-[11px] font-mono text-zinc-500 truncate max-w-lg mt-0.5">{formatUrl(issue.url)}</p>
+                          </td>
+                          <td className="px-4 py-3 font-mono font-semibold text-zinc-800">{issue.occurrences}x</td>
+                          <td className="px-4 py-3">
+                            <span className="text-xs px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 border border-zinc-200">
                               {issue.status}
                             </span>
                           </td>
@@ -1140,7 +1194,7 @@ export default function Dashboard() {
                       ))}
                       {filteredIssues.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-4 py-8 text-center text-zinc-400 font-sans text-xs">
+                          <td colSpan={5} className="px-4 py-8 text-center text-zinc-400 text-xs">
                             {t.noIssuesFound}
                           </td>
                         </tr>
@@ -1174,7 +1228,7 @@ export default function Dashboard() {
 
                   <div className="space-y-3">
                     <div>
-                      <label className="text-[11px] font-mono text-zinc-500 block mb-1">Target Endpoint URL</label>
+                      <label className="text-[11px] text-zinc-500 block mb-1">Target endpoint URL</label>
                       <input
                         type="url"
                         value={scanUrl}
@@ -1195,7 +1249,7 @@ export default function Dashboard() {
                           key={preset.label}
                           type="button"
                           onClick={() => setScanUrl(preset.url)}
-                          className={`px-2 py-0.5 rounded text-[11px] font-mono border ${
+                          className={`px-2 py-0.5 rounded text-[11px] border ${
                             scanUrl.includes(preset.label.replace('.in', ''))
                               ? 'bg-zinc-900 text-white border-zinc-900'
                               : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
@@ -1214,12 +1268,12 @@ export default function Dashboard() {
                       {scanning ? (
                         <>
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Auditing Target...</span>
+                          <span>Auditing target...</span>
                         </>
                       ) : (
                         <>
                           <Send className="w-3.5 h-3.5" />
-                          <span>{t.startScan}</span>
+                          <span>Start scan</span>
                         </>
                       )}
                     </button>
@@ -1235,10 +1289,20 @@ export default function Dashboard() {
                   )}
 
                   {scanResult && (
-                    <div className={`p-3 rounded text-xs font-mono ${
-                      scanResult.error ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    <div className={`p-3 rounded text-xs border ${
+                      scanResult.error 
+                        ? 'bg-red-50 text-red-800 border-red-200' 
+                        : 'bg-emerald-50 text-emerald-900 border-emerald-200'
                     }`}>
-                      {scanResult.error ? `Failed: ${scanResult.error}` : `✓ Audit completed: Health Score ${scanResult.healthScore}/100 • ${scanResult.issuesDetected} flaws detected.`}
+                      <div className="font-medium">
+                        {scanResult.error ? (
+                          <span>Audit failed for <code className="font-mono">{scanResult.targetUrl || scanUrl}</code>: {scanResult.error}</span>
+                        ) : (
+                          <span>
+                            ✓ Audit complete for <code className="font-mono">{scanResult.targetUrl || scanUrl}</code>: Health score <span className="font-mono font-bold">{scanResult.healthScore ?? 100}/100</span> with <span className="font-mono font-bold">{scanResult.issuesDetected ?? 0}</span> issues detected.
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1257,38 +1321,38 @@ export default function Dashboard() {
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-4 bg-white border border-zinc-200 rounded-md space-y-1">
-                    <span className="text-[10px] font-mono uppercase text-zinc-400 font-semibold">n8n Engine</span>
-                    <h4 className="text-xl font-bold font-mono text-zinc-900">Connected</h4>
+                    <span className="text-[10px] text-zinc-500 font-semibold">n8n engine</span>
+                    <h4 className="text-xl font-bold text-zinc-900">Connected</h4>
                     <p className="text-xs text-zinc-400 font-mono">https://n8n-engine.sitesentinel.dev</p>
                   </div>
 
                   <div className="p-4 bg-white border border-zinc-200 rounded-md space-y-1">
-                    <span className="text-[10px] font-mono uppercase text-zinc-400 font-semibold">Scheduled Window</span>
-                    <h4 className="text-xl font-bold font-mono text-zinc-900">08:00 - 17:00</h4>
-                    <p className="text-xs text-zinc-400 font-mono">Cron: 0 8-17 * * *</p>
+                    <span className="text-[10px] text-zinc-500 font-semibold">Scheduled window</span>
+                    <h4 className="text-xl font-bold text-zinc-900"><span className="font-mono">08:00 - 17:00</span></h4>
+                    <p className="text-xs text-zinc-400">Cron: <span className="font-mono">0 8-17 * * *</span></p>
                   </div>
 
                   <div className="p-4 bg-white border border-zinc-200 rounded-md space-y-1">
-                    <span className="text-[10px] font-mono uppercase text-zinc-400 font-semibold">Rate Limit Cooldown</span>
-                    <h4 className="text-xl font-bold font-mono text-zinc-900">1 req / 2s</h4>
-                    <p className="text-xs text-zinc-400 font-mono">Per target domain</p>
+                    <span className="text-[10px] text-zinc-500 font-semibold">Rate limit cooldown</span>
+                    <h4 className="text-xl font-bold text-zinc-900"><span className="font-mono">1 req / 2s</span></h4>
+                    <p className="text-xs text-zinc-400">Per target domain</p>
                   </div>
                 </div>
 
                 <div className="bg-white border border-zinc-200 rounded-md p-5 space-y-3">
-                  <h4 className="text-xs font-semibold text-zinc-900 uppercase tracking-wider">
-                    Enrolled n8n Automation Workflows
+                  <h4 className="text-xs font-semibold text-zinc-900">
+                    Enrolled n8n automation workflows
                   </h4>
-                  <div className="space-y-2 font-mono text-xs">
+                  <div className="space-y-2 text-xs">
                     {[
-                      { name: 'SiteSentinel - Send Approved Reports', trigger: 'Every 5 min poll', status: 'ACTIVE', desc: 'Dispatches verified bug reports via Gmail SMTP' },
-                      { name: 'SiteSentinel - Daily Scheduled Scan', trigger: 'Cron (0 8-17 * * *)', status: 'CONFIGURED', desc: 'Triggers hourly audits within business operating window' },
-                      { name: 'SiteSentinel - Approval Digest', trigger: 'Daily 09:00 AM', status: 'CONFIGURED', desc: 'Summarizes pending triage queue for security auditor review' },
+                      { name: 'SiteSentinel - Send Approved Reports', trigger: 'Every 5 min poll', status: 'Active', desc: 'Dispatches verified bug reports via Gmail SMTP' },
+                      { name: 'SiteSentinel - Daily Scheduled Scan', trigger: 'Cron (0 8-17 * * *)', status: 'Configured', desc: 'Triggers hourly audits within business operating window' },
+                      { name: 'SiteSentinel - Approval Digest', trigger: 'Daily 09:00 AM', status: 'Configured', desc: 'Summarizes pending triage queue for security auditor review' },
                     ].map((wf, idx) => (
                       <div key={idx} className="flex items-center justify-between p-3 rounded bg-zinc-50 border border-zinc-200">
                         <div>
                           <p className="font-semibold text-zinc-900">{wf.name}</p>
-                          <p className="text-[11px] text-zinc-500 font-sans mt-0.5">{wf.desc} • <span className="font-mono text-zinc-700">{wf.trigger}</span></p>
+                          <p className="text-[11px] text-zinc-500 mt-0.5">{wf.desc} • <span className="font-mono text-zinc-700">{wf.trigger}</span></p>
                         </div>
                         <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
                           {wf.status}
@@ -1362,8 +1426,8 @@ export default function Dashboard() {
 
               {/* Footer */}
               <div className="pt-2 border-t border-zinc-100 flex items-center justify-between">
-                <span className="text-[11px] font-mono text-zinc-400">
-                  Regional Multi-Lingual Core
+                <span className="text-[11px] text-zinc-400">
+                  Regional multi-lingual support
                 </span>
                 <button
                   onClick={() => setShowSettings(false)}
