@@ -27,7 +27,7 @@
           "parameters": [
             {
               "name": "x-api-key",
-              "value": "={{ $env.API_SECRET_TOKEN || 'sitesentinel_dev_api_key_123' }}"
+              "value": "sitesentinel_dev_api_key_123"
             }
           ]
         },
@@ -95,13 +95,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=http://host.docker.internal:4001/reports/{{ $json.id }}/mark-sent",
+        "url": "={{ 'http://host.docker.internal:4001/reports/' + $('Has Valid Recipient?').item.json.id + '/mark-sent' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "x-api-key",
-              "value": "={{ $env.API_SECRET_TOKEN || 'sitesentinel_dev_api_key_123' }}"
+              "value": "sitesentinel_dev_api_key_123"
             }
           ]
         },
@@ -114,6 +114,7 @@
       "position": [1250, 200]
     }
   ],
+
   "connections": {
     "Every 5 Minutes Poll": {
       "main": [
