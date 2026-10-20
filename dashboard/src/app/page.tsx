@@ -63,7 +63,7 @@ export default function Dashboard() {
   const [lang, setLang] = useState<Language>('en');
   const t = translations[lang] || translations.en;
 
-  // Navigation
+  // Navigation (Bottom Floating Dock)
   const [activeTab, setActiveTab] = useState<'overview' | 'review' | 'sites' | 'issues' | 'scan' | 'automation'>('overview');
   
   // Settings modal
@@ -217,10 +217,10 @@ export default function Dashboard() {
   const currentLangInfo = SUPPORTED_LANGUAGES.find(l => l.code === lang) || SUPPORTED_LANGUAGES[0];
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#fcfcfd] text-slate-800 antialiased font-sans">
-      {/* ── Top Navigation Bar ────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] px-4 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Brand */}
+    <div className="flex flex-col min-h-screen bg-[#fcfcfd] text-slate-800 antialiased font-sans pb-28">
+      {/* ── Top Header Bar (Clean, Uncluttered, No-Wrap) ─────────────────── */}
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] px-6 lg:px-12 h-16 flex items-center justify-between gap-4">
+        {/* Brand & Status */}
         <div className="flex items-center gap-3 flex-shrink-0">
           <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-500 via-sky-400 to-teal-300 flex items-center justify-center text-white shadow-sm shadow-indigo-100">
             <ShieldCheck className="w-5 h-5 stroke-[2.2]" />
@@ -232,50 +232,22 @@ export default function Dashboard() {
                 PRO
               </span>
             </div>
+            <p className="text-[11px] text-slate-400 font-medium hidden sm:block">{t.subtitle}</p>
           </div>
         </div>
 
-        {/* Center Nav Pills (Clean, No-Overlap, Whitespace-Nowrap) */}
-        <nav className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/60 shadow-inner overflow-x-auto max-w-2xl">
-          {[
-            { id: 'overview', icon: Activity, label: t.overview },
-            { id: 'review', icon: FileText, label: t.reviewQueue, badge: pendingReports.length },
-            { id: 'sites', icon: Globe2, label: t.sites, count: sites.length },
-            { id: 'issues', icon: AlertTriangle, label: t.issues, count: issues.length },
-            { id: 'scan', icon: Send, label: t.newScan },
-            { id: 'automation', icon: Workflow, label: t.automation },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`relative flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 ${
-                  isActive
-                    ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/80'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
-                <span>{tab.label}</span>
-                {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className="px-1.5 py-0.2 text-[10px] font-mono font-bold rounded-full bg-rose-100 text-rose-700 animate-pulse">
-                    {tab.badge}
-                  </span>
-                )}
-                {tab.count !== undefined && !tab.badge && (
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
+        {/* Right Tools: Fast Audit, Settings, Sync */}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {/* Quick Audit Button */}
+          <button
+            onClick={() => handleTriggerScan('http://localhost:4000/')}
+            disabled={scanning}
+            className="hidden md:flex items-center gap-2 text-xs font-semibold bg-gradient-to-r from-indigo-500 to-sky-500 hover:from-indigo-600 hover:to-sky-600 text-white px-3.5 py-2 rounded-xl shadow-sm transition disabled:opacity-50"
+          >
+            <Zap className="w-3.5 h-3.5 fill-current" />
+            <span>Fast Audit (localhost:4000)</span>
+          </button>
 
-        {/* Right Tools: Settings Gear & Sync Button */}
-        <div className="flex items-center gap-2 flex-shrink-0">
           {/* Settings Button (Language & Preferences) */}
           <button
             onClick={() => setShowSettings(true)}
@@ -298,85 +270,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* ── Settings Modal (Language & Regional Customization) ───────────── */}
-      <AnimatePresence>
-        {showSettings && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: 0.15 }}
-              className="w-full max-w-lg bg-white rounded-3xl p-7 shadow-2xl border border-slate-100 space-y-6"
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-sm">
-                    <Languages className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900">{t.language}</h3>
-                    <p className="text-xs text-slate-400">{t.languageDesc}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Languages Grid (English + Tamil + Malayalam + Telugu + Kannada + Hindi) */}
-              <div className="grid grid-cols-2 gap-3">
-                {SUPPORTED_LANGUAGES.map((item) => {
-                  const isCurrent = lang === item.code;
-                  return (
-                    <button
-                      key={item.code}
-                      onClick={() => {
-                        setLang(item.code);
-                      }}
-                      className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all text-left ${
-                        isCurrent 
-                          ? 'bg-indigo-50/80 border-indigo-300 ring-2 ring-indigo-200' 
-                          : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-xl">{item.flag}</span>
-                        <div>
-                          <p className="font-bold text-xs text-slate-900">{item.nativeName}</p>
-                          <p className="text-[10px] text-slate-400 font-medium">{item.label}</p>
-                        </div>
-                      </div>
-                      {isCurrent && (
-                        <Check className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Footer */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs font-mono text-slate-400">
-                  SiteSentinel Regional Multi-Lingual Core
-                </span>
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition"
-                >
-                  {t.close}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Main Canvas ──────────────────────────────────────────────────── */}
+      {/* ── Main Canvas Content ──────────────────────────────────────────── */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
         <AnimatePresence mode="wait">
           {/* ════ 1. OVERVIEW VIEW ═══════════════════════════════════════════ */}
@@ -587,12 +481,12 @@ export default function Dashboard() {
                       {scanning ? (
                         <>
                           <RefreshCw className="w-4 h-4 animate-spin" />
-                          <span>{t.scanning}</span>
+                          <span>Auditing Target...</span>
                         </>
                       ) : (
                         <>
                           <Send className="w-4 h-4" />
-                          <span>{t.startScan}</span>
+                          <span>Launch Target Audit</span>
                         </>
                       )}
                     </button>
@@ -714,7 +608,7 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Language Switch Tabs (English / Native Preview) */}
+                      {/* Language Switch Tabs */}
                       <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                         <button
                           onClick={() => setNativeReportPreview(false)}
@@ -1110,6 +1004,130 @@ export default function Dashboard() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* ── Floating Bottom Dock (Sliding Island Navigation) ─────────────── */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+        <motion.nav 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.15)] p-1.5 rounded-2xl flex items-center gap-1.5"
+        >
+          {[
+            { id: 'overview', icon: Activity, label: t.overview },
+            { id: 'review', icon: FileText, label: t.reviewQueue, badge: pendingReports.length },
+            { id: 'sites', icon: Globe2, label: t.sites, count: sites.length },
+            { id: 'issues', icon: AlertTriangle, label: t.issues, count: issues.length },
+            { id: 'scan', icon: Send, label: t.newScan },
+            { id: 'automation', icon: Workflow, label: t.automation },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-indigo-600 to-sky-600 text-white shadow-md shadow-indigo-100'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                }`}
+              >
+                <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                <span className="tracking-tight">{tab.label}</span>
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span className={`px-1.5 py-0.2 text-[10px] font-mono font-extrabold rounded-full ${
+                    isActive ? 'bg-white text-indigo-700' : 'bg-rose-100 text-rose-700 animate-pulse'
+                  }`}>
+                    {tab.badge}
+                  </span>
+                )}
+                {tab.count !== undefined && !tab.badge && (
+                  <span className={`text-[10px] font-mono ${isActive ? 'text-white/80' : 'text-slate-400'}`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </motion.nav>
+      </div>
+
+      {/* ── Settings Modal (Language & Region Selector) ─────────────────── */}
+      <AnimatePresence>
+        {showSettings && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.15 }}
+              className="w-full max-w-lg bg-white rounded-3xl p-7 shadow-2xl border border-slate-100 space-y-6"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-sm">
+                    <Languages className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">{t.language}</h3>
+                    <p className="text-xs text-slate-400">{t.languageDesc}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Languages Grid (English + Tamil + Malayalam + Telugu + Kannada + Hindi) */}
+              <div className="grid grid-cols-2 gap-3">
+                {SUPPORTED_LANGUAGES.map((item) => {
+                  const isCurrent = lang === item.code;
+                  return (
+                    <button
+                      key={item.code}
+                      onClick={() => setLang(item.code)}
+                      className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all text-left ${
+                        isCurrent 
+                          ? 'bg-indigo-50/80 border-indigo-300 ring-2 ring-indigo-200' 
+                          : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl">{item.flag}</span>
+                        <div>
+                          <p className="font-bold text-xs text-slate-900">{item.nativeName}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">{item.label}</p>
+                        </div>
+                      </div>
+                      {isCurrent && (
+                        <Check className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Footer */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs font-mono text-slate-400">
+                  SiteSentinel Regional Multi-Lingual Core
+                </span>
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition"
+                >
+                  {t.close}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
