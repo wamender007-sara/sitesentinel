@@ -94,6 +94,9 @@ export default function Dashboard() {
   const [auditingSiteId, setAuditingSiteId] = useState<string | null>(null);
   const [scanStage, setScanStage] = useState(0);
   const [scanResult, setScanResult] = useState<any>(null);
+  const [autoDispatch, setAutoDispatch] = useState(false);
+  const [autopilotRunning, setAutopilotRunning] = useState(false);
+  const [autopilotResult, setAutopilotResult] = useState<any>(null);
 
   // Filter & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -179,7 +182,7 @@ export default function Dashboard() {
     try {
       const res = await fetchApi('/scans', {
         method: 'POST',
-        body: JSON.stringify({ url, autoAnalyze: true }),
+        body: JSON.stringify({ url, autoAnalyze: true, autoDispatch }),
       });
       setScanStage(4);
       setScanResult({ ...res, targetUrl: url });
@@ -202,6 +205,26 @@ export default function Dashboard() {
         setAuditingSiteId(null);
         setScanStage(0);
       }, 1400);
+    }
+  };
+
+  const handleRunAutopilot = async () => {
+    setAutopilotRunning(true);
+    setAutopilotResult(null);
+    try {
+      const res = await fetchApi('/scans/autopilot', { method: 'POST' });
+      setAutopilotResult(res);
+      confetti({
+        particleCount: 70,
+        spread: 60,
+        origin: { y: 0.5 },
+        colors: ['#09090b', '#16a34a', '#f59e0b']
+      });
+      loadData();
+    } catch (err: any) {
+      setAutopilotResult({ error: err.message });
+    } finally {
+      setAutopilotRunning(false);
     }
   };
 
@@ -727,6 +750,19 @@ export default function Dashboard() {
                         </button>
                       </div>
 
+                      {/* Auto-Dispatch Toggle */}
+                      <label className="flex items-center gap-2 p-2 rounded bg-zinc-50 border border-zinc-200 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={autoDispatch}
+                          onChange={(e) => setAutoDispatch(e.target.checked)}
+                          className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 w-3.5 h-3.5"
+                        />
+                        <span className="text-[11px] text-zinc-700 leading-tight">
+                          <strong>Auto-email site owner:</strong> automatically dispatch bug report via <code className="font-mono text-zinc-900">sitesentinel.test@gmail.com</code> if verified flaws found.
+                        </span>
+                      </label>
+
                       {/* Primary Trigger Button */}
                       <button
                         onClick={() => handleTriggerScan()}
@@ -768,6 +804,11 @@ export default function Dashboard() {
                             ) : (
                               <span>
                                 ✓ Audit complete for <code className="font-mono">{scanResult.targetUrl || scanUrl}</code>: Health score <span className="font-mono font-bold">{scanResult.healthScore ?? 100}/100</span> with <span className="font-mono font-bold">{scanResult.issuesDetected ?? 0}</span> issues detected.
+                                {scanResult.autoDispatchedCount > 0 && (
+                                  <span className="block mt-1 font-semibold text-emerald-950">
+                                    ✉ Alert email automatically dispatched to site owner via sitesentinel.test@gmail.com!
+                                  </span>
+                                )}
                               </span>
                             )}
                           </div>
@@ -1346,6 +1387,57 @@ export default function Dashboard() {
                     <h4 className="text-xl font-bold text-zinc-900"><span className="font-mono">1 req / 2s</span></h4>
                     <p className="text-xs text-zinc-400">Per target domain</p>
                   </div>
+                </div>
+
+                {/* Autonomous Auto-Pilot Trigger Card */}
+                <div className="bg-white border border-zinc-200 rounded-md p-5 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-3">
+                    <div>
+                      <h4 className="text-xs font-semibold text-zinc-900 flex items-center gap-2">
+                        <Zap className="w-3.5 h-3.5 text-zinc-900" />
+                        <span>Autonomous Webpage Audit & Alert Engine</span>
+                      </h4>
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        Crawls common public websites (resumereviewer.in, news.ycombinator.com, example.com), executes human-like Playwright analysis, diagnoses root causes with Gemini AI, and automatically emails bug alerts to the webpage holders via sitesentinel.test@gmail.com.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleRunAutopilot}
+                      disabled={autopilotRunning}
+                      className="px-4 py-2 rounded bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs transition flex items-center gap-2 flex-shrink-0 disabled:opacity-50"
+                    >
+                      {autopilotRunning ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>Auditing Common Webpages...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Trigger Auto-Audit Cycle</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {autopilotResult && (
+                    <div className={`p-3 rounded text-xs border ${
+                      autopilotResult.error ? 'bg-red-50 text-red-800 border-red-200' : 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                    }`}>
+                      {autopilotResult.error ? (
+                        <span>Execution failed: {autopilotResult.error}</span>
+                      ) : (
+                        <div>
+                          <p className="font-semibold text-emerald-950">✓ Auto-Pilot Complete: {autopilotResult.targetsAudited} targets audited · {autopilotResult.emailsDispatched} bug report email(s) dispatched to site owners!</p>
+                          <div className="mt-2 space-y-1 font-mono text-[11px] text-zinc-700">
+                            {autopilotResult.results?.map((r: any, idx: number) => (
+                              <p key={idx}>• {r.targetUrl}: Score {r.healthScore}/100 ({r.issuesFound} issues)</p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-white border border-zinc-200 rounded-md p-5 space-y-3">

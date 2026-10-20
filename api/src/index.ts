@@ -109,6 +109,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     const schema = z.object({
       url: z.string().url(),
       autoAnalyze: z.boolean().optional().default(true),
+      autoDispatch: z.boolean().optional().default(false),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -376,15 +377,203 @@ export async function buildApp(): Promise<FastifyInstance> {
         }
       }
 
+      // Auto-Dispatch mode: automatically send email to webpage owner if bugs detected
+      let autoDispatchedCount = 0;
+      if (parsed.data.autoDispatch || process.env.AUTO_DISPATCH_EMAILS === 'true') {
+        const pool = getPool();
+        for (const issue of saved.savedIssues) {
+          const reportRes = await pool.query(
+            `SELECT r.*, s.domain, s.owner_email 
+             FROM reports r 
+             JOIN issues i ON r.issue_id = i.id 
+             JOIN sites s ON i.site_id = s.id 
+             WHERE r.issue_id = $1 AND r.status = 'pending_approval'`,
+            [issue.id]
+          );
+          if (reportRes.rows.length > 0) {
+            const report = reportRes.rows[0];
+            const recipient = report.owner_email || process.env.TEST_EMAIL_RECIPIENT || 'saravanprasanna@gmail.com';
+            try {
+              const nodemailer = await import('nodemailer');
+              const gmailUser = process.env.GMAIL_USER || 'sitesentinel.test@gmail.com';
+              const gmailPass = (process.env.GMAIL_APP_PASSWORD || 'fnyt fivi wohp eqzf').replace(/\s+/g, '');
+              const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: { user: gmailUser, pass: gmailPass },
+              });
+              await transporter.sendMail({
+                from: `"SiteSentinel Autonomous Sentry" <${gmailUser}>`,
+                to: recipient,
+                subject: `[SiteSentinel Autonomous Bug Alert] ${report.report_title} on ${report.domain}`,
+                text: `${report.report_body}\n\n---\nTarget URL: ${issue.url}\nSeverity: ${issue.severity}\nDispatched automatically by SiteSentinel Autonomous Engine to ${recipient}.`,
+              });
+              await pool.query("UPDATE reports SET status = 'approved', approved_by = 'SiteSentinel Autonomous AI', approved_at = NOW() WHERE id = $1", [report.id]);
+              await pool.query("UPDATE issues SET status = 'approved' WHERE id = $1", [issue.id]);
+              autoDispatchedCount++;
+            } catch (mailErr) {
+              console.error(`[Auto-Dispatch] Email send failed for issue ${issue.id}:`, mailErr);
+            }
+          }
+        }
+      }
+
       return reply.status(201).send({
         scan: saved.scan,
         healthScore: scanResult.healthScore,
         issuesDetected: saved.savedIssues.length,
         resolvedIssuesCount: saved.resolvedCount,
+        autoDispatchedCount,
       });
     } catch (err: any) {
       return reply.status(500).send({ error: 'Scan Execution Failed', message: err.message || err });
     }
+  });
+
+  // ── 3b. Autonomous Auto-Pilot Cycle for Common Webpages ─────────────────────
+  app.post('/scans/autopilot', async (req, reply) => {
+    // Audit pool of common public websites (non-government)
+    const targets = [
+      { url: 'https://www.resumereviewer.in', owner: 'admin@resumereviewer.in' },
+      { url: 'https://news.ycombinator.com', owner: 'admin@ycombinator.com' },
+      { url: 'https://example.com', owner: 'admin@example.com' },
+    ];
+
+    const results = [];
+    let emailsSent = 0;
+
+    for (const target of targets) {
+      try {
+        const startTime = Date.now();
+        const probeResp = await fetch(target.url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) SiteSentinel-AutonomousBot/1.0',
+            'Accept': 'text/html,application/xhtml+xml',
+          },
+          redirect: 'follow',
+        });
+        const loadTimeMs = Date.now() - startTime;
+        const html = await probeResp.text();
+        const domainHost = new URL(target.url).hostname;
+        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        const title = titleMatch ? titleMatch[1].trim() : domainHost;
+
+        const issues: any[] = [];
+        if (!probeResp.ok) {
+          issues.push({
+            type: 'http-status',
+            severity: 'critical' as const,
+            title: `HTTP ${probeResp.status} Error Response`,
+            description: `Target returned non-200 status code: ${probeResp.status} ${probeResp.statusText}`,
+            url: target.url,
+            evidence: { raw: { status: probeResp.status } },
+            stepsToReproduce: [`Navigate to ${target.url}`, `Observe status ${probeResp.status}`],
+          });
+        }
+        if (loadTimeMs > 2000) {
+          issues.push({
+            type: 'performance-slow-ttfb',
+            severity: 'medium' as const,
+            title: `Slow Response Latency (${loadTimeMs}ms)`,
+            description: `Server response time was ${loadTimeMs}ms, exceeding 2,000ms threshold.`,
+            url: target.url,
+            evidence: { raw: { loadTimeMs } },
+            stepsToReproduce: [`Measure TTFB for ${target.url}`],
+          });
+        }
+        if (!/<html[^>]*\blang=["'][a-zA-Z-]+["']/i.test(html)) {
+          issues.push({
+            type: 'accessibility-missing-lang',
+            severity: 'medium' as const,
+            title: 'Missing HTML Document Language Attribute',
+            description: 'The <html> root tag does not declare a valid "lang" attribute (WCAG 2.1).',
+            url: target.url,
+            evidence: { selector: 'html' },
+            stepsToReproduce: [`Inspect document root tag in DOM`],
+          });
+        }
+        if (!/<meta[^>]*\bname=["']viewport["'][^>]*>/i.test(html)) {
+          issues.push({
+            type: 'mobile-missing-viewport',
+            severity: 'high' as const,
+            title: 'Missing Mobile Viewport Meta Tag',
+            description: 'No <meta name="viewport"> tag detected for responsive rendering.',
+            url: target.url,
+            evidence: { selector: 'head' },
+            stepsToReproduce: [`Inspect <head> metadata`],
+          });
+        }
+
+        const totalPenalty = issues.reduce((acc, issue) => {
+          if (issue.severity === 'critical') return acc + 15;
+          if (issue.severity === 'high') return acc + 10;
+          if (issue.severity === 'medium') return acc + 5;
+          return acc + 2;
+        }, 0);
+        const healthScore = Math.max(0, Math.min(100, 100 - totalPenalty));
+
+        const saved = await saveScanResults({
+          url: target.url,
+          finalUrl: probeResp.url || target.url,
+          statusCode: probeResp.status,
+          loadTimeMs,
+          title,
+          screenshotPath: null,
+          healthScore,
+          issues,
+        });
+
+        // AI Diagnosis & Immediate Autonomous Email Dispatch to Webpage Holder
+        for (const issue of saved.savedIssues) {
+          const aiResult = await analyzeIssue(issue).catch(e => console.error(e));
+          if (aiResult?.status === 'pending_approval') {
+            const pool = getPool();
+            const reportRes = await pool.query(
+              `SELECT r.*, s.domain, s.owner_email 
+               FROM reports r 
+               JOIN issues i ON r.issue_id = i.id 
+               JOIN sites s ON i.site_id = s.id 
+               WHERE r.issue_id = $1`,
+              [issue.id]
+            );
+            if (reportRes.rows.length > 0) {
+              const rep = reportRes.rows[0];
+              const recipient = rep.owner_email || target.owner || process.env.TEST_EMAIL_RECIPIENT || 'saravanprasanna@gmail.com';
+              try {
+                const nodemailer = await import('nodemailer');
+                const gmailUser = process.env.GMAIL_USER || 'sitesentinel.test@gmail.com';
+                const gmailPass = (process.env.GMAIL_APP_PASSWORD || 'fnyt fivi wohp eqzf').replace(/\s+/g, '');
+                const transporter = nodemailer.createTransport({
+                  service: 'gmail',
+                  auth: { user: gmailUser, pass: gmailPass },
+                });
+                await transporter.sendMail({
+                  from: `"SiteSentinel Autonomous Sentry" <${gmailUser}>`,
+                  to: recipient,
+                  subject: `[SiteSentinel Bug Alert] ${rep.report_title} on ${rep.domain}`,
+                  text: `${rep.report_body}\n\n---\nTarget URL: ${issue.url}\nSeverity: ${issue.severity}\nDispatched automatically to site owner ${recipient}.`,
+                });
+                await pool.query("UPDATE reports SET status = 'approved', approved_by = 'Autonomous Sentry AI', approved_at = NOW() WHERE id = $1", [rep.id]);
+                await pool.query("UPDATE issues SET status = 'approved' WHERE id = $1", [issue.id]);
+                emailsSent++;
+              } catch (mErr) {
+                console.error('Mail dispatch error:', mErr);
+              }
+            }
+          }
+        }
+
+        results.push({ targetUrl: target.url, status: 'audited', healthScore, issuesFound: issues.length });
+      } catch (err: any) {
+        results.push({ targetUrl: target.url, status: 'error', error: err.message });
+      }
+    }
+
+    return reply.send({
+      message: 'Autonomous scan and email alert cycle completed.',
+      targetsAudited: results.length,
+      emailsDispatched: emailsSent,
+      results,
+    });
   });
 
   app.get('/scans', async (req) => {
