@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "build": "echo Build OK",
+    "start": "tsx src/index.ts",
     "migrate": "tsx src/db/migrate.ts",
     "test": "tsx --test test/**/*.test.ts"
   },

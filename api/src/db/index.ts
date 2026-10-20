@@ -18,11 +18,17 @@ export function getPool(): pg.Pool {
     const connectionString = process.env.DATABASE_URL || 
       `postgresql://${process.env.POSTGRES_USER || 'sitesentinel'}:${process.env.POSTGRES_PASSWORD || 'sitesentinel_secure_dev_pass'}@${process.env.POSTGRES_HOST || 'localhost'}:${process.env.POSTGRES_PORT || '5432'}/${process.env.POSTGRES_DB || 'sitesentinel_db'}`;
 
+    const isRemote = connectionString.includes('neon.tech') || 
+                     connectionString.includes('sslmode=') || 
+                     connectionString.includes('.aws.') ||
+                     process.env.NODE_ENV === 'production';
+
     pool = new Pool({
       connectionString,
+      ssl: isRemote ? { rejectUnauthorized: false } : undefined,
       max: 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 10000,
     });
 
     pool.on('error', (err) => {
