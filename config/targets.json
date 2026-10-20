@@ -18,18 +18,18 @@
     },
     {
       "id": "target-local-test-site",
-      "name": "SiteSentinel Local Testbed",
-      "domain": "localhost:4000",
+      "name": "SiteSentinel QA Demo Testbed",
+      "domain": "demo-testbed.sitesentinel.dev",
       "allowedProtocols": ["http", "https"],
       "startUrls": [
-        "http://localhost:4000/",
-        "http://localhost:4000/slow",
-        "http://localhost:4000/admin",
-        "http://localhost:4000/broken-link-target"
+        "https://demo-testbed.sitesentinel.dev/",
+        "https://demo-testbed.sitesentinel.dev/slow",
+        "https://demo-testbed.sitesentinel.dev/admin",
+        "https://demo-testbed.sitesentinel.dev/broken-link-target"
       ],
       "maxPagesPerRun": 25,
       "maxDepth": 3,
-      "contactEmail": "admin@localhost.test",
+      "contactEmail": "admin@sitesentinel.dev",
       "enabled": true
     },
     {

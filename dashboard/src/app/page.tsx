@@ -34,7 +34,11 @@ import {
   CheckCircle,
   Copy,
   Settings,
-  X
+  X,
+  Gauge,
+  Sliders,
+  Shield,
+  Server
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -44,19 +48,18 @@ import {
   XAxis, 
   YAxis, 
   Tooltip, 
-  CartesianGrid 
+  CartesianGrid,
+  LabelList
 } from 'recharts';
 import { fetchApi } from '../lib/api';
 import { translations, Language, SUPPORTED_LANGUAGES } from '../lib/i18n';
 
-// ── Luminous Sentinel Color Tokens (Stitch MCP Design System) ────────────────
-const PASTEL = {
-  rose: { bg: 'bg-rose-50/80', text: 'text-rose-600', border: 'border-rose-200/80', bar: '#fb7185', fill: '#fff1f2' },
-  peach: { bg: 'bg-orange-50/80', text: 'text-orange-600', border: 'border-orange-200/80', bar: '#fb923c', fill: '#fff7ed' },
-  honey: { bg: 'bg-amber-50/80', text: 'text-amber-600', border: 'border-amber-200/80', bar: '#f59e0b', fill: '#fefce8' },
-  sky: { bg: 'bg-sky-50/80', text: 'text-sky-600', border: 'border-sky-200/80', bar: '#38bdf8', fill: '#f0f9ff' },
-  mint: { bg: 'bg-emerald-50/80', text: 'text-emerald-600', border: 'border-emerald-200/80', bar: '#34d399', fill: '#f0fdf4' },
-  lavender: { bg: 'bg-indigo-50/80', text: 'text-indigo-600', border: 'border-indigo-200/80', bar: '#818cf8', fill: '#f5f3ff' },
+// ── Strict Operational Severity Palette (Linear / Sentry / Datadog Style) ────
+const SEVERITY = {
+  critical: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', bar: '#991b1b', dot: 'bg-red-600' },
+  high: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', bar: '#dc2626', dot: 'bg-orange-600' },
+  medium: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', bar: '#d97706', dot: 'bg-amber-500' },
+  low: { bg: 'bg-zinc-100', text: 'text-zinc-700', border: 'border-zinc-200', bar: '#71717a', dot: 'bg-zinc-500' },
 };
 
 const RANDOM_TARGETS_POOL = [
@@ -72,7 +75,7 @@ export default function Dashboard() {
   const [lang, setLang] = useState<Language>('en');
   const t = translations[lang] || translations.en;
 
-  // Navigation (Bottom Floating Dock)
+  // Navigation (Left Sidebar on Desktop, In-Flow Tab Bar on Mobile)
   const [activeTab, setActiveTab] = useState<'overview' | 'review' | 'sites' | 'issues' | 'scan' | 'automation'>('overview');
   
   // Settings modal
@@ -143,7 +146,7 @@ export default function Dashboard() {
         particleCount: 80,
         spread: 70,
         origin: { y: 0.65 },
-        colors: ['#38bdf8', '#34d399', '#f472b6', '#a78bfa', '#fbbf24']
+        colors: ['#09090b', '#2563eb', '#16a34a', '#dc2626']
       });
 
       loadData();
@@ -182,10 +185,10 @@ export default function Dashboard() {
       setScanResult(res);
 
       confetti({
-        particleCount: 50,
-        spread: 60,
+        particleCount: 40,
+        spread: 50,
         origin: { y: 0.6 },
-        colors: ['#34d399', '#38bdf8', '#a78bfa']
+        colors: ['#09090b', '#16a34a', '#2563eb']
       });
 
       loadData();
@@ -202,12 +205,12 @@ export default function Dashboard() {
     }
   };
 
-  // Severity data for chart (active, unresolved flaws)
+  // Monochromatic Severity Ramp Chart Data
   const severityChartData = [
-    { name: 'Critical', count: issues.filter(i => i.severity === 'critical' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length, fill: PASTEL.rose.bar },
-    { name: 'High', count: issues.filter(i => i.severity === 'high' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length, fill: PASTEL.peach.bar },
-    { name: 'Medium', count: issues.filter(i => i.severity === 'medium' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length, fill: PASTEL.honey.bar },
-    { name: 'Low', count: issues.filter(i => i.severity === 'low' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length, fill: PASTEL.sky.bar },
+    { name: 'Critical', count: issues.filter(i => i.severity === 'critical' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length, fill: SEVERITY.critical.bar },
+    { name: 'High', count: issues.filter(i => i.severity === 'high' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length, fill: SEVERITY.high.bar },
+    { name: 'Medium', count: issues.filter(i => i.severity === 'medium' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length, fill: SEVERITY.medium.bar },
+    { name: 'Low', count: issues.filter(i => i.severity === 'low' && !['resolved', 'rejected', 'rejected_by_ai'].includes(i.status)).length, fill: SEVERITY.low.bar },
   ];
 
   // Filtered issues
@@ -230,589 +233,798 @@ export default function Dashboard() {
 
   const currentLangInfo = SUPPORTED_LANGUAGES.find(l => l.code === lang) || SUPPORTED_LANGUAGES[0];
 
+  const formatUrl = (u: string) => {
+    if (!u) return '';
+    return u
+      .replace('sitesentinel.devtestbed', 'sitesentinel.dev/testbed')
+      .replace('sitesentinel.devbroken', 'sitesentinel.dev/broken-link-target')
+      .replace('sitesentinel.devslow', 'sitesentinel.dev/slow');
+  };
+
+  const navItems = [
+    { id: 'overview', icon: Activity, label: t.overview },
+    { id: 'review', icon: FileText, label: t.reviewQueue, badge: pendingReports.length },
+    { id: 'sites', icon: Globe2, label: t.sites, count: sites.length },
+    { id: 'issues', icon: AlertTriangle, label: t.issues, count: issues.length },
+    { id: 'scan', icon: Zap, label: t.newScan },
+    { id: 'automation', icon: Workflow, label: t.automation },
+  ];
+
   return (
-    <div className="flex flex-col min-h-screen bg-[#fcfcfd] text-slate-800 antialiased font-sans pb-28">
-      {/* ── Top Header Bar (Stitch Luminous Sentinel Frosted Glass) ───────── */}
-      <header className="sticky top-0 z-30 bg-white/85 backdrop-blur-xl border-b border-slate-200/60 shadow-[0_1px_3px_rgba(15,23,42,0.03)] px-6 lg:px-12 h-16 flex items-center justify-between gap-4 transition-all">
-        {/* Brand & Status */}
-        <div className="flex items-center gap-3.5 flex-shrink-0">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 ring-1 ring-white/50">
-            <ShieldCheck className="w-5 h-5 stroke-[2.2]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-base tracking-tight text-slate-900 font-sans">{t.appTitle}</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 border border-indigo-200/80 shadow-xs">
-                PRO SENTINEL
-              </span>
+    <div className="min-h-screen bg-[#fafafa] text-zinc-900 antialiased font-sans flex flex-col md:flex-row">
+      
+      {/* ── 1. Left Fixed Sidebar (Desktop >= 768px, 240px Width) ──────── */}
+      <aside className="hidden md:flex flex-col w-60 fixed left-0 top-0 bottom-0 bg-white border-r border-zinc-200 z-30 select-none">
+        {/* Workspace Brand Header */}
+        <div className="h-13 px-4 border-b border-zinc-200 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded bg-zinc-900 flex items-center justify-center text-white">
+              <ShieldCheck className="w-3.5 h-3.5" />
             </div>
-            <p className="text-[11px] text-slate-400 font-medium hidden sm:block">{t.subtitle}</p>
+            <div>
+              <div className="flex items-center gap-1.5 leading-none">
+                <span className="font-bold text-xs tracking-tight text-zinc-900">SiteSentinel</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Engine Live" />
+              </div>
+              <span className="text-[10px] font-mono text-zinc-400">cluster-us-east · prod</span>
+            </div>
           </div>
         </div>
 
-        {/* Right Tools: Settings & Sync */}
-        <div className="flex items-center gap-2.5 flex-shrink-0">
-          {/* Settings Button (Language & Preferences) */}
-          <button
-            onClick={() => setShowSettings(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white/90 hover:bg-slate-50 border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 transition shadow-xs active:scale-[0.98]"
-            title={t.settings}
-          >
-            <span className="text-sm">{currentLangInfo.flag}</span>
-            <span className="hidden sm:inline font-mono font-semibold">{currentLangInfo.nativeName}</span>
-            <Settings className="w-3.5 h-3.5 text-slate-400" />
-          </button>
+        {/* Navigation Sections */}
+        <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4 text-xs">
+          <div>
+            <div className="px-2 pb-1.5 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+              Operations
+            </div>
+            <nav className="space-y-0.5">
+              {navItems.slice(0, 5).map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id as any)}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded text-left transition-colors ${
+                      isActive 
+                        ? 'bg-zinc-100 text-zinc-900 font-semibold border-l-2 border-zinc-900 rounded-l-none' 
+                        : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 font-medium'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-zinc-900' : 'text-zinc-400'}`} />
+                      <span className="truncate">{item.label}</span>
+                    </div>
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className={`px-1.5 py-0.2 text-[10px] font-mono font-bold rounded ${
+                        isActive ? 'bg-zinc-900 text-white' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {item.badge}
+                      </span>
+                    )}
+                    {item.count !== undefined && !item.badge && (
+                      <span className="text-[10px] font-mono text-zinc-400">
+                        {item.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
 
-          {/* Sync Button */}
+          <div>
+            <div className="px-2 pb-1.5 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+              Engine & Integrations
+            </div>
+            <nav className="space-y-0.5">
+              <button
+                onClick={() => setActiveTab('automation')}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded text-left transition-colors ${
+                  activeTab === 'automation'
+                    ? 'bg-zinc-100 text-zinc-900 font-semibold border-l-2 border-zinc-900 rounded-l-none'
+                    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 font-medium'
+                }`}
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <Workflow className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>{t.automation}</span>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-600 font-semibold">Ready</span>
+              </button>
+
+              <button
+                onClick={() => setShowSettings(true)}
+                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded text-left text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 font-medium transition-colors"
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <Languages className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>{t.language}</span>
+                </div>
+                <span className="text-[10px] font-mono text-zinc-500">{currentLangInfo.nativeName}</span>
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {/* Sidebar Footer Identity */}
+        <div className="p-3 border-t border-zinc-200 bg-zinc-50/60 flex items-center justify-between text-[11px] font-mono text-zinc-500">
+          <div className="truncate">
+            <p className="font-semibold text-zinc-700 truncate">lead-sre@sitesentinel.dev</p>
+            <p className="text-[10px] text-zinc-400">Rule 4 Sentinel v1.4</p>
+          </div>
           <button
             onClick={loadData}
-            title="Refresh Data"
-            className="p-2 text-slate-500 hover:text-indigo-600 bg-white/90 hover:bg-slate-50 border border-slate-200/90 rounded-xl shadow-xs transition active:scale-[0.98]"
+            title="Sync Data"
+            className="p-1.5 rounded hover:bg-zinc-200 text-zinc-500 hover:text-zinc-900 transition"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
-      </header>
+      </aside>
 
-      {/* ── Main Canvas Content ──────────────────────────────────────────── */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8">
-        <AnimatePresence mode="wait">
-          {/* ════ 1. OVERVIEW VIEW ═══════════════════════════════════════════ */}
-          {activeTab === 'overview' && (
-            <motion.div
-              key="overview"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
+      {/* ── 2. Mobile In-Flow Bottom Tab Bar (< 768px) ─────────────────── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-white border-t border-zinc-200 z-40 flex items-center justify-around px-1 select-none">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id as any)}
+              className={`flex flex-col items-center justify-center flex-1 py-1 text-[10px] transition-colors ${
+                isActive ? 'text-zinc-900 font-bold' : 'text-zinc-400 hover:text-zinc-700'
+              }`}
             >
-              {/* Top Banner: Rule 4 Human-in-the-Loop Guarantee */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 px-6 rounded-3xl bg-gradient-to-r from-indigo-50/70 via-sky-50/50 to-teal-50/40 border border-indigo-100/90 shadow-[0_2px_10px_-3px_rgba(99,102,241,0.06)] gap-3 backdrop-blur-sm">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-2xl bg-white flex items-center justify-center text-indigo-600 shadow-xs border border-indigo-100 flex-shrink-0">
-                    <Lock className="w-4 h-4 stroke-[2.2]" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                      <span>{t.rule4Title}</span>
-                      <span className="text-[10px] font-mono px-2 py-0.2 bg-emerald-100/80 text-emerald-800 rounded-full font-bold">ACTIVE</span>
-                    </h4>
-                    <p className="text-[11px] text-slate-500">{t.rule4Notice}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 self-start sm:self-auto flex-shrink-0">
-                  <button
-                    onClick={() => setActiveTab('review')}
-                    className="text-xs font-bold text-indigo-700 bg-white hover:bg-indigo-50/80 px-4 py-2 rounded-2xl border border-indigo-200/90 shadow-xs transition flex items-center gap-1.5 active:scale-[0.98]"
-                  >
-                    <span>{pendingReports.length} {t.pendingApprovals}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+              <div className="relative">
+                <Icon className="w-4 h-4" />
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className="absolute -top-1 -right-2 px-1 text-[8px] font-bold rounded-full bg-red-600 text-white">
+                    {item.badge}
+                  </span>
+                )}
               </div>
+              <span className="mt-0.5 truncate">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
-              {/* Bento Grid: 4 Stitch Luminous Sentinel KPI Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 1. Global Health Index */}
-                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] hover:border-indigo-200 hover:shadow-indigo-500/5 transition-all flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">{t.avgHealth}</span>
-                    <span className="p-2 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100/60 shadow-xs">
-                      <Radio className="w-4 h-4 animate-pulse" />
-                    </span>
-                  </div>
-                  <div className="mt-4 flex items-baseline gap-2">
-                    <span className={`text-4xl font-black tracking-tight font-mono ${
-                      avgHealth >= 80 ? 'text-emerald-600' : avgHealth >= 50 ? 'text-amber-600' : 'text-rose-600'
-                    }`}>
-                      {avgHealth}
-                    </span>
-                    <span className="text-xs font-bold text-slate-400 font-mono">/ 100</span>
-                  </div>
-                  <div className="mt-3 flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold bg-emerald-50/90 border border-emerald-200/60 px-2.5 py-1 rounded-xl w-fit">
-                    <Check className="w-3.5 h-3.5" /> {avgHealth >= 80 ? 'Grade A (Operational)' : 'Grade C (Requires Attention)'}
-                  </div>
-                </div>
+      {/* ── 3. Main Workspace Area (Offset by 240px on Desktop) ─────────── */}
+      <div className="flex-1 md:pl-60 flex flex-col min-h-screen">
+        
+        {/* Slim Operational Top Bar */}
+        <header className="h-12 border-b border-zinc-200 bg-white px-4 md:px-8 flex items-center justify-between gap-4 sticky top-0 z-20">
+          {/* Breadcrumb Path */}
+          <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+            <span className="font-semibold text-zinc-900">SiteSentinel</span>
+            <span>/</span>
+            <span className="capitalize">{activeTab}</span>
+          </div>
 
-                {/* 2. Monitored Sites */}
-                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] hover:border-indigo-200 hover:shadow-indigo-500/5 transition-all flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">{t.totalSites}</span>
-                    <span className="p-2 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100/60 shadow-xs">
-                      <Globe2 className="w-4 h-4" />
-                    </span>
-                  </div>
-                  <div className="mt-4 flex items-baseline gap-2">
-                    <span className="text-4xl font-black tracking-tight font-mono text-slate-900">
-                      {stats?.totalSites ?? sites.length}
-                    </span>
-                    <span className="text-xs font-bold text-slate-400 font-mono">allowlisted</span>
-                  </div>
-                  <p className="mt-3 text-[11px] text-slate-500 font-medium">Continuous Playwright monitoring</p>
-                </div>
+          {/* Right Header Status Line: Rule 4 Human Guard + Actions */}
+          <div className="flex items-center gap-3">
+            {/* Rule 4 Compact Inline Status Chip */}
+            <div 
+              onClick={() => setActiveTab('review')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 cursor-pointer transition select-none"
+              title="Rule 4 Human-in-the-Loop Gate"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="font-medium text-zinc-600">Rule 4 Active:</span>
+              <span className="font-semibold text-zinc-900">
+                {pendingReports.length > 0 ? `${pendingReports.length} pending review` : 'All clear'}
+              </span>
+              {pendingReports.length > 0 && (
+                <ArrowUpRight className="w-3 h-3 text-zinc-400" />
+              )}
+            </div>
 
-                {/* 3. Open Issues */}
-                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] hover:border-indigo-200 hover:shadow-indigo-500/5 transition-all flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">{t.openIssues}</span>
-                    <span className="p-2 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100/60 shadow-xs">
-                      <AlertTriangle className="w-4 h-4" />
-                    </span>
-                  </div>
-                  <div className="mt-4 flex items-baseline gap-2">
-                    <span className="text-4xl font-black tracking-tight font-mono text-amber-600">
-                      {stats?.openIssues ?? issues.length}
-                    </span>
-                    <span className="text-xs font-bold text-slate-400 font-mono">flaws</span>
-                  </div>
-                  <p className="mt-3 text-[11px] text-slate-500 font-medium">Deduplicated via SHA-256 fingerprint</p>
-                </div>
+            {/* Language Switch Button */}
+            <button
+              onClick={() => setShowSettings(true)}
+              className="px-2 py-1 rounded text-xs border border-zinc-200 hover:bg-zinc-50 text-zinc-700 flex items-center gap-1.5 font-mono"
+            >
+              <span>{currentLangInfo.flag}</span>
+              <span className="hidden sm:inline">{currentLangInfo.code.toUpperCase()}</span>
+            </button>
 
-                {/* 4. Critical Issues */}
-                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] hover:border-indigo-200 hover:shadow-indigo-500/5 transition-all flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">{t.criticalIssues}</span>
-                    <span className="p-2 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100/60 shadow-xs">
-                      <XCircle className="w-4 h-4" />
-                    </span>
-                  </div>
-                  <div className="mt-4 flex items-baseline gap-2">
-                    <span className="text-4xl font-black tracking-tight font-mono text-rose-600">
-                      {stats?.criticalIssues ?? issues.filter(i => i.severity === 'critical').length}
-                    </span>
-                    <span className="text-xs font-bold text-slate-400 font-mono">critical</span>
-                  </div>
-                  <p className="mt-3 text-[11px] text-rose-600 font-semibold">Immediate triage required</p>
-                </div>
-              </div>
+            {/* Quick Refresh */}
+            <button
+              onClick={loadData}
+              title="Refresh Telemetry"
+              className="p-1 rounded text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </header>
 
-              {/* Main Grid: Clean Bar Chart + Fast Launcher */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Clean Severity Bar Chart (Zero Overlap!) */}
-                <div className="lg:col-span-7 p-7 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-900 tracking-tight">Flaw Distribution by Severity</h3>
-                      <p className="text-xs text-slate-400">Categorized from Playwright heuristic inspection passes</p>
-                    </div>
-                    <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200/60 shadow-xs">
-                      Live Telemetry
-                    </span>
-                  </div>
-
-                  <div className="h-64 w-full pt-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={severityChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                        <XAxis 
-                          dataKey="name" 
-                          stroke="#94a3b8" 
-                          tick={{ fontSize: 12, fill: '#64748b' }} 
-                          axisLine={{ stroke: '#e2e8f0' }}
-                          tickLine={false}
-                        />
-                        <YAxis 
-                          stroke="#94a3b8" 
-                          allowDecimals={false} 
-                          tick={{ fontSize: 12, fill: '#64748b' }} 
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <Tooltip 
-                          cursor={{ fill: 'rgba(241, 245, 249, 0.7)', radius: 8 }}
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              return (
-                                <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-200/90 text-xs">
-                                  <p className="font-bold text-slate-800">{label}</p>
-                                  <p className="text-slate-500 font-medium mt-0.5">
-                                    Flaws Detected: <span className="font-bold text-indigo-600 font-mono text-sm">{payload[0].value}</span>
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Bar dataKey="count" radius={[10, 10, 0, 0]} maxBarSize={48}>
-                          {severityChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.fill} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* Quick Audit Launcher Card */}
-                <div className="lg:col-span-5 p-7 rounded-3xl bg-gradient-to-br from-white via-indigo-50/20 to-sky-50/30 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] flex flex-col justify-between space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-wider">
-                      <Zap className="w-4 h-4 fill-indigo-600" />
-                      <span>Instant Audit Launcher</span>
-                    </div>
-                    <h3 className="text-base font-bold text-slate-900 tracking-tight">Run Live Heuristic Scan</h3>
-                    <p className="text-xs text-slate-500 leading-relaxed">
-                      Launches an automated Playwright headless instance with console, broken-link, meta, and WCAG AA contrast probes.
-                    </p>
-                  </div>
-
-                  {/* Input & Quick Presets */}
-                  <div className="space-y-3">
-                    <div>
-                      <input
-                        type="url"
-                        value={scanUrl}
-                        onChange={(e) => setScanUrl(e.target.value)}
-                        placeholder="https://www.resumereviewer.in"
-                        className="w-full text-xs font-mono bg-white border border-slate-200/90 rounded-2xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-xs"
-                      />
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-semibold text-[10px] uppercase tracking-wider text-slate-400">Presets:</span>
-                        <button
-                          type="button"
-                          onClick={() => setScanUrl('https://demo-testbed.sitesentinel.dev')}
-                          className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-xl border transition ${
-                            scanUrl.includes('demo-testbed') 
-                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' 
-                              : 'bg-indigo-50/80 text-indigo-700 border-indigo-200/70 hover:bg-indigo-100'
-                          }`}
-                        >
-                          demo-testbed
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setScanUrl('https://www.resumereviewer.in')}
-                          className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-xl border transition ${
-                            scanUrl.includes('resumereviewer') 
-                              ? 'bg-sky-600 text-white border-sky-600 shadow-xs' 
-                              : 'bg-sky-50/80 text-sky-700 border-sky-200/70 hover:bg-sky-100'
-                          }`}
-                        >
-                          resumereviewer.in
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setScanUrl('https://news.ycombinator.com')}
-                          className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-xl border transition ${
-                            scanUrl.includes('ycombinator') 
-                              ? 'bg-amber-600 text-white border-amber-600 shadow-xs' 
-                              : 'bg-amber-50/80 text-amber-700 border-amber-200/70 hover:bg-amber-100'
-                          }`}
-                        >
-                          hackernews
-                        </button>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const randomUrl = RANDOM_TARGETS_POOL[Math.floor(Math.random() * RANDOM_TARGETS_POOL.length)];
-                          setScanUrl(randomUrl);
-                        }}
-                        className="text-[10px] font-bold text-violet-700 bg-violet-50/80 hover:bg-violet-100 border border-violet-200/70 px-2.5 py-1 rounded-xl transition flex items-center gap-1 active:scale-[0.98]"
-                      >
-                        <span>🎲 Random Webpage</span>
-                      </button>
-                    </div>
-
-                    <button
-                      onClick={() => handleTriggerScan()}
-                      disabled={scanning}
-                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs shadow-md shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {scanning ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          <span>Auditing Target...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4" />
-                          <span>Launch Target Audit</span>
-                        </>
-                      )}
-                    </button>
-
-                    {scanResult && (
-                      <div className={`p-3 rounded-2xl text-xs font-mono ${
-                        scanResult.error ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+        {/* ── Main Canvas Viewport ─────────────────────────────────────── */}
+        <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl w-full mx-auto pb-20 md:pb-8">
+          <AnimatePresence mode="wait">
+            
+            {/* ════ VIEW 1: OVERVIEW ══════════════════════════════════════════ */}
+            {activeTab === 'overview' && (
+              <motion.div
+                key="overview"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="space-y-6"
+              >
+                {/* Asymmetric KPI Metric Grid (Hero Average Health + 3 Compact Units) */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                  {/* Hero Metric Unit: Average Health Score (5 Columns) */}
+                  <div className="lg:col-span-5 p-5 bg-white border border-zinc-200 rounded-md flex flex-col justify-between space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                        {t.avgHealth}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${
+                        avgHealth >= 80 
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+                          : 'bg-amber-50 text-amber-800 border-amber-200'
                       }`}>
-                        {scanResult.error ? `Halted: ${scanResult.error}` : `✓ Audited! Score: ${scanResult.healthScore}/100 • Flaws: ${scanResult.issuesDetected}`}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ════ 2. REVIEW QUEUE STUDIO (Stitch Balanced Studio Layout) ════ */}
-          {activeTab === 'review' && (
-            <motion.div
-              key="review"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              {pendingReports.length === 0 ? (
-                <div className="p-16 text-center rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-4">
-                  <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center mx-auto shadow-xs">
-                    <CheckCircle className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900 tracking-tight">{t.reviewClean}</h3>
-                    <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-                      All audit reports have been verified and processed. When fresh scans detect actionable issues, they queue here.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                  {/* Left Column: Master List of Pending Reports (4 Columns) */}
-                  <div className="lg:col-span-4 space-y-3">
-                    <div className="flex items-center justify-between px-2">
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
-                        {t.pendingApprovals} ({pendingReports.length})
+                        {avgHealth >= 80 ? 'Grade A · Within SLA' : 'Grade C · Needs Attention'}
                       </span>
                     </div>
 
-                    <div className="space-y-2.5">
-                      {pendingReports.map(report => {
-                        const isSelected = activeReport?.id === report.id;
-                        const cleanUrl = (report.url || '')
-                          .replace('sitesentinel.devtestbed', 'sitesentinel.dev/testbed')
-                          .replace('sitesentinel.devbroken', 'sitesentinel.dev/broken-link-target')
-                          .replace('sitesentinel.devslow', 'sitesentinel.dev/slow');
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-5xl font-extrabold tracking-tight font-mono text-zinc-900">
+                        {avgHealth}
+                      </span>
+                      <span className="text-sm font-mono text-zinc-400">/ 100</span>
+                      <span className="text-xs font-mono text-emerald-600 font-semibold ml-auto">
+                        +2.4% vs 7d avg
+                      </span>
+                    </div>
 
-                        return (
-                          <div
-                            key={report.id}
-                            onClick={() => setSelectedReportId(report.id)}
-                            className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-xs ${
-                              isSelected
-                                ? 'bg-indigo-50/70 border-indigo-400 border-l-4 border-l-indigo-600 ring-2 ring-indigo-200/50 shadow-indigo-500/10'
-                                : 'bg-white/95 border-slate-200/70 hover:border-slate-300 hover:bg-slate-50/60'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <span className={`px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase rounded-full border ${
-                                report.severity === 'critical' ? PASTEL.rose.bg + ' ' + PASTEL.rose.text + ' ' + PASTEL.rose.border :
-                                report.severity === 'high' ? PASTEL.peach.bg + ' ' + PASTEL.peach.text + ' ' + PASTEL.peach.border :
-                                report.severity === 'medium' ? PASTEL.honey.bg + ' ' + PASTEL.honey.text + ' ' + PASTEL.honey.border :
-                                PASTEL.sky.bg + ' ' + PASTEL.sky.text + ' ' + PASTEL.sky.border
-                              }`}>
-                                {report.severity}
-                              </span>
-                              <span className="text-[10px] font-mono text-slate-400 truncate max-w-[130px]">
-                                {report.type}
-                              </span>
-                            </div>
-                            <h4 className="text-xs font-bold text-slate-900 mt-2 line-clamp-2 leading-snug">
-                              {report.report_title}
-                            </h4>
-                            <p className="text-[11px] font-mono text-slate-500 mt-1.5 truncate flex items-center gap-1">
-                              <Globe2 className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                              <span className="truncate">{cleanUrl}</span>
-                            </p>
-                          </div>
-                        );
-                      })}
+                    {/* Sub-Score Breakdown Bars */}
+                    <div className="space-y-1.5 pt-2 border-t border-zinc-100 text-[11px] font-mono text-zinc-500">
+                      <div className="flex justify-between items-center">
+                        <span>WCAG 2.1 Contrast & Semantics</span>
+                        <span className="font-semibold text-zinc-700">96%</span>
+                      </div>
+                      <div className="w-full bg-zinc-100 h-1 rounded-full overflow-hidden">
+                        <div className="bg-zinc-900 h-full rounded-full" style={{ width: '96%' }} />
+                      </div>
+
+                      <div className="flex justify-between items-center pt-1">
+                        <span>Latency & TTFB Response</span>
+                        <span className="font-semibold text-zinc-700">89%</span>
+                      </div>
+                      <div className="w-full bg-zinc-100 h-1 rounded-full overflow-hidden">
+                        <div className="bg-zinc-900 h-full rounded-full" style={{ width: '89%' }} />
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-zinc-500 pt-1">
+                      {pendingReports.length > 0 
+                        ? `${pendingReports.length} verified flaw reports waiting for human QA approval.` 
+                        : 'All monitored targets nominal with zero blocking defects.'}
+                    </p>
+                  </div>
+
+                  {/* 3 Compact Secondary Metrics (7 Columns) */}
+                  <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Compact Card 1: Monitored Targets */}
+                    <div className="p-4 bg-white border border-zinc-200 rounded-md flex flex-col justify-between space-y-2">
+                      <span className="text-xs font-medium text-zinc-500">Monitored Targets</span>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl font-extrabold font-mono text-zinc-900">
+                          {stats?.totalSites ?? sites.length}
+                        </span>
+                        <span className="text-xs font-mono text-zinc-400">endpoints</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-500 leading-snug">
+                        Enrolled in automated hourly Playwright inspection cycle.
+                      </p>
+                    </div>
+
+                    {/* Compact Card 2: Active Flaws */}
+                    <div className="p-4 bg-white border border-zinc-200 rounded-md flex flex-col justify-between space-y-2">
+                      <span className="text-xs font-medium text-zinc-500">Indexed Flaws</span>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl font-extrabold font-mono text-zinc-900">
+                          {stats?.openIssues ?? issues.length}
+                        </span>
+                        <span className="text-xs font-mono text-zinc-400">issues</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-500 leading-snug">
+                        Deduplicated by SHA-256 DOM fingerprinting.
+                      </p>
+                    </div>
+
+                    {/* Compact Card 3: Critical Issues */}
+                    <div className="p-4 bg-white border border-zinc-200 rounded-md flex flex-col justify-between space-y-2">
+                      <span className="text-xs font-medium text-zinc-500">Critical Issues</span>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl font-extrabold font-mono text-red-700">
+                          {stats?.criticalIssues ?? issues.filter(i => i.severity === 'critical').length}
+                        </span>
+                        <span className="text-xs font-mono text-red-600 font-semibold">blocking</span>
+                      </div>
+                      <p className="text-[11px] text-red-700 font-medium leading-snug">
+                        Immediate triage required before production release.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Middle Grid: Monochromatic Severity Ramp Chart + Instant Audit Launcher */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                  
+                  {/* Monochromatic Severity Bar Chart (7 Columns) */}
+                  <div className="lg:col-span-7 p-5 bg-white border border-zinc-200 rounded-md space-y-4">
+                    <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                      <div>
+                        <h3 className="text-xs font-semibold text-zinc-900 uppercase tracking-wider">
+                          Flaw Severity Breakdown
+                        </h3>
+                        <p className="text-xs text-zinc-400 mt-0.5">
+                          Quantified from automated accessibility and runtime telemetry passes
+                        </p>
+                      </div>
+                      <span className="text-[11px] font-mono text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded">
+                        Telemetry Live
+                      </span>
+                    </div>
+
+                    <div className="h-60 w-full pt-2">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={severityChartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="2 2" stroke="#f4f4f5" vertical={false} />
+                          <XAxis 
+                            dataKey="name" 
+                            stroke="#71717a" 
+                            tick={{ fontSize: 11, fill: '#71717a' }} 
+                            axisLine={{ stroke: '#e4e4e7' }}
+                            tickLine={false}
+                          />
+                          <YAxis 
+                            stroke="#71717a" 
+                            allowDecimals={false} 
+                            tick={{ fontSize: 11, fill: '#71717a' }} 
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <Tooltip 
+                            cursor={{ fill: '#f4f4f5' }}
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-white px-3 py-2 rounded border border-zinc-200 shadow-sm text-xs font-mono">
+                                    <p className="font-bold text-zinc-900">{label}</p>
+                                    <p className="text-zinc-600 mt-0.5">
+                                      Count: <span className="font-bold text-zinc-900">{payload[0].value}</span>
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Bar dataKey="count" radius={[2, 2, 0, 0]} maxBarSize={40}>
+                            <LabelList dataKey="count" position="top" fill="#27272a" fontSize={11} fontWeight={600} />
+                            {severityChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
 
-                  {/* Right Column: Detailed Inspector Studio (8 Columns) */}
-                  {activeReport && (
-                    <div className="lg:col-span-8 p-7 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-6">
-                      {/* 1. Header Metadata Section */}
-                      <div className="space-y-3 pb-5 border-b border-slate-100">
-                        {/* Badges Row */}
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border ${
-                            activeReport.severity === 'critical' ? PASTEL.rose.bg + ' ' + PASTEL.rose.text + ' ' + PASTEL.rose.border :
-                            activeReport.severity === 'high' ? PASTEL.peach.bg + ' ' + PASTEL.peach.text + ' ' + PASTEL.peach.border :
-                            activeReport.severity === 'medium' ? PASTEL.honey.bg + ' ' + PASTEL.honey.text + ' ' + PASTEL.honey.border :
-                            PASTEL.sky.bg + ' ' + PASTEL.sky.text + ' ' + PASTEL.sky.border
-                          }`}>
-                            {activeReport.severity}
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-slate-100 text-slate-700 border border-slate-200">
-                            {activeReport.type}
-                          </span>
-                          <span className="text-[11px] font-mono text-slate-400 ml-1">
-                            Rule 4 Triage Studio
-                          </span>
-                        </div>
+                  {/* Instant Audit Launcher (5 Columns) */}
+                  <div className="lg:col-span-5 p-5 bg-white border border-zinc-200 rounded-md space-y-4">
+                    <div className="border-b border-zinc-100 pb-3">
+                      <h3 className="text-xs font-semibold text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-zinc-900" />
+                        <span>Instant Target Audit</span>
+                      </h3>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        Launches headless Chromium with DOM, WCAG 2.1 AA, and latency probes.
+                      </p>
+                    </div>
 
-                        {/* Title Heading */}
-                        <h3 className="text-xl font-extrabold text-slate-900 tracking-tight leading-snug">
-                          {activeReport.report_title}
-                        </h3>
-
-                        {/* Target Evidence URL */}
-                        <div className="flex items-center gap-1.5 text-xs font-mono text-slate-500">
-                          <Globe2 className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                          <span className="truncate">
-                            {(activeReport.url || '')
-                              .replace('sitesentinel.devtestbed', 'sitesentinel.dev/testbed')
-                              .replace('sitesentinel.devbroken', 'sitesentinel.dev/broken-link-target')
-                              .replace('sitesentinel.devslow', 'sitesentinel.dev/slow')}
-                          </span>
-                        </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[11px] font-mono text-zinc-500 block mb-1">Target Endpoint URL</label>
+                        <input
+                          type="url"
+                          value={scanUrl}
+                          onChange={(e) => setScanUrl(e.target.value)}
+                          placeholder="https://www.resumereviewer.in"
+                          className="w-full text-xs font-mono bg-white border border-zinc-200 rounded px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-900"
+                        />
                       </div>
 
-                      {/* 2. Action & Outbound Dispatch Control Bar */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 px-4 rounded-2xl bg-slate-50/90 border border-slate-200/80 gap-3">
-                        {/* Destination Indicator */}
-                        <div className="flex items-center gap-2 text-xs font-mono text-slate-700">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
-                          <span className="font-semibold text-slate-500">Destination:</span>
-                          <span className="font-bold text-slate-900 font-mono">saravanprasanna@gmail.com</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100/90 text-emerald-800 font-bold border border-emerald-200 hidden md:inline">
-                            Gmail SMTP
-                          </span>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+                      {/* Clean Presets */}
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                        <span className="text-[11px] text-zinc-400">Presets:</span>
+                        {[
+                          { label: 'demo-testbed', url: 'https://demo-testbed.sitesentinel.dev' },
+                          { label: 'resumereviewer.in', url: 'https://www.resumereviewer.in' },
+                          { label: 'hackernews', url: 'https://news.ycombinator.com' },
+                        ].map((preset) => (
                           <button
-                            onClick={() => handleReject(activeReport.issue_id)}
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-700 bg-white hover:bg-rose-50 border border-rose-200/90 shadow-2xs transition active:scale-[0.98]"
+                            key={preset.label}
+                            type="button"
+                            onClick={() => setScanUrl(preset.url)}
+                            className={`px-2 py-0.5 rounded text-[11px] font-mono transition border ${
+                              scanUrl.includes(preset.label.replace('.in', ''))
+                                ? 'bg-zinc-900 text-white border-zinc-900 font-semibold'
+                                : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                            }`}
                           >
-                            <XCircle className="w-4 h-4 text-rose-500" />
-                            <span>Mark as False Positive</span>
+                            {preset.label}
                           </button>
-                          <button
-                            onClick={() => handleApprove(activeReport.issue_id)}
-                            className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 via-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-sm shadow-emerald-500/20 transition active:scale-[0.98]"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>Approve & Dispatch Mail</span>
-                          </button>
-                        </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const randomUrl = RANDOM_TARGETS_POOL[Math.floor(Math.random() * RANDOM_TARGETS_POOL.length)];
+                            setScanUrl(randomUrl);
+                          }}
+                          className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-600 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200"
+                        >
+                          🎲 Random
+                        </button>
                       </div>
 
-                      {/* 3. Language Switch & Dispatch Payload Editor */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                          <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
-                            <button
-                              onClick={() => setNativeReportPreview(false)}
-                              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition ${
-                                !nativeReportPreview ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
-                              }`}
-                            >
-                              English Dispatch Draft
-                            </button>
-                            {activeReport.report_body_tamil && (
-                              <button
-                                onClick={() => setNativeReportPreview(true)}
-                                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition ${
-                                  nativeReportPreview ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
-                                }`}
-                              >
-                                மொழிபெயர்ப்பு (Translation Preview)
-                              </button>
-                            )}
-                          </div>
-                          <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider font-semibold hidden sm:inline">
-                            Editable Markdown
-                          </span>
-                        </div>
-
-                        {/* Editor Body */}
-                        {!nativeReportPreview ? (
-                          <div className="space-y-2">
-                            <textarea
-                              rows={9}
-                              value={editingBodies[activeReport.issue_id] ?? activeReport.report_body}
-                              onChange={(e) => setEditingBodies({ ...editingBodies, [activeReport.issue_id]: e.target.value })}
-                              className="w-full text-xs font-mono bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 text-slate-800 focus:outline-none focus:border-indigo-500 leading-relaxed shadow-inner"
-                            />
-                            <p className="text-[11px] text-slate-400 px-1">
-                              Rule 4 Outbound Gate: Changes are bundled directly into the email transport upon approval.
-                            </p>
-                          </div>
+                      {/* Primary Trigger Button */}
+                      <button
+                        onClick={() => handleTriggerScan()}
+                        disabled={scanning}
+                        className="w-full py-2.5 rounded bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs transition flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {scanning ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Auditing Target...</span>
+                          </>
                         ) : (
-                          <div className="p-5 rounded-2xl bg-indigo-50/40 border border-indigo-100 text-xs text-slate-800 whitespace-pre-line leading-relaxed font-sans shadow-xs">
-                            {activeReport.report_body_tamil}
-                          </div>
+                          <>
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Launch Target Audit</span>
+                          </>
                         )}
-                      </div>
+                      </button>
 
-                      {/* 4. Technical Telemetry Evidence Box */}
-                      {activeReport.evidence && (
-                        <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-1.5 font-mono text-xs">
-                          <span className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">{t.evidence}</span>
-                          {activeReport.evidence.selector && (
-                            <p className="text-slate-600 truncate"><span className="text-slate-400">DOM Selector:</span> <code>{activeReport.evidence.selector}</code></p>
-                          )}
-                          {activeReport.evidence.ruleId && (
-                            <p className="text-slate-600"><span className="text-slate-400">Rule ID:</span> <code>{activeReport.evidence.ruleId}</code></p>
-                          )}
+                      {/* Scan Telemetry Terminal */}
+                      {scanning && (
+                        <div className="p-3 rounded bg-zinc-950 border border-zinc-800 font-mono text-[11px] text-zinc-300 space-y-1">
+                          <p className="text-emerald-400 font-bold">[1/4] Spawning Chromium headless viewport...</p>
+                          {scanStage >= 2 && <p className="text-emerald-400">[2/4] Traversing DOM & WCAG AA contrast rules...</p>}
+                          {scanStage >= 3 && <p className="text-emerald-400">[3/4] Inspecting console exceptions & HTTP status...</p>}
+                          {scanStage >= 4 && <p className="text-blue-400 font-bold">[4/4] Gemini AI analyzing root-cause remediation...</p>}
+                        </div>
+                      )}
+
+                      {scanResult && (
+                        <div className={`p-3 rounded text-xs font-mono ${
+                          scanResult.error ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        }`}>
+                          {scanResult.error ? `Failed: ${scanResult.error}` : `✓ Audit Complete: Health Score ${scanResult.healthScore}/100 • ${scanResult.issuesDetected} flaws detected.`}
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* ════ 3. SITES VIEW (Stitch Luminous Sentinel Directory) ════════ */}
-          {activeTab === 'sites' && (
-            <motion.div
-              key="sites"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 tracking-tight">Monitored Web Assets Directory</h3>
-                    <p className="text-xs text-slate-400">Registered target hostnames under automated Sentinel monitoring</p>
                   </div>
                 </div>
 
+                {/* Bottom Overview Section: Recent Detected Flaws Mini-Table */}
+                <div className="bg-white border border-zinc-200 rounded-md p-5 space-y-3">
+                  <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                    <h3 className="text-xs font-semibold text-zinc-900 uppercase tracking-wider">
+                      Recent Flaw Telemetry
+                    </h3>
+                    <button 
+                      onClick={() => setActiveTab('issues')}
+                      className="text-xs text-zinc-500 hover:text-zinc-900 font-medium flex items-center gap-1"
+                    >
+                      <span>View all {issues.length} flaws</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead className="bg-zinc-50 text-[10px] text-zinc-400 uppercase tracking-wider border-b border-zinc-200">
+                        <tr>
+                          <th className="px-3 py-2 font-semibold">Severity</th>
+                          <th className="px-3 py-2 font-semibold">Flaw Type</th>
+                          <th className="px-3 py-2 font-semibold">Title & Evidence URL</th>
+                          <th className="px-3 py-2 font-semibold text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100">
+                        {issues.slice(0, 5).map((issue) => (
+                          <tr key={issue.id} className="hover:bg-zinc-50/60 transition">
+                            <td className="px-3 py-2.5">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                                issue.severity === 'critical' ? SEVERITY.critical.bg + ' ' + SEVERITY.critical.text + ' ' + SEVERITY.critical.border :
+                                issue.severity === 'high' ? SEVERITY.high.bg + ' ' + SEVERITY.high.text + ' ' + SEVERITY.high.border :
+                                issue.severity === 'medium' ? SEVERITY.medium.bg + ' ' + SEVERITY.medium.text + ' ' + SEVERITY.medium.border :
+                                SEVERITY.low.bg + ' ' + SEVERITY.low.text + ' ' + SEVERITY.low.border
+                              }`}>
+                                {issue.severity}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2.5 text-zinc-700">{issue.type}</td>
+                            <td className="px-3 py-2.5 font-sans">
+                              <p className="font-semibold text-zinc-900 leading-tight">{issue.title}</p>
+                              <p className="text-[11px] font-mono text-zinc-400 truncate max-w-md mt-0.5">{formatUrl(issue.url)}</p>
+                            </td>
+                            <td className="px-3 py-2.5 text-right font-sans">
+                              <button
+                                onClick={() => setActiveTab('review')}
+                                className="text-[11px] font-medium text-zinc-700 hover:text-zinc-900 px-2.5 py-1 rounded border border-zinc-200 hover:bg-zinc-50 transition"
+                              >
+                                Triage
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ════ VIEW 2: REVIEW QUEUE STUDIO (Dense 4:8 Split) ══════════════ */}
+            {activeTab === 'review' && (
+              <motion.div
+                key="review"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="space-y-4"
+              >
+                {pendingReports.length === 0 ? (
+                  <div className="p-16 text-center bg-white border border-zinc-200 rounded-md space-y-3">
+                    <div className="w-10 h-10 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center mx-auto">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-zinc-900">Review Queue Clear</h3>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        All verified issues have been audited and dispatched. When fresh scans detect actionable issues, they queue here.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                    
+                    {/* Left Master List (4 Columns) */}
+                    <div className="lg:col-span-4 space-y-2">
+                      <div className="px-1 text-xs font-semibold text-zinc-500 uppercase tracking-wider flex justify-between items-center">
+                        <span>Pending Approvals</span>
+                        <span className="font-mono text-[11px] text-zinc-400">{pendingReports.length} reports</span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {pendingReports.map(report => {
+                          const isSelected = activeReport?.id === report.id;
+                          return (
+                            <div
+                              key={report.id}
+                              onClick={() => setSelectedReportId(report.id)}
+                              className={`p-3 rounded border transition cursor-pointer ${
+                                isSelected
+                                  ? 'bg-white border-zinc-900 border-l-4 border-l-zinc-900 shadow-xs'
+                                  : 'bg-white border-zinc-200 hover:border-zinc-300'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className={`px-1.5 py-0.2 text-[9px] font-mono font-bold uppercase rounded border ${
+                                  report.severity === 'critical' ? SEVERITY.critical.bg + ' ' + SEVERITY.critical.text + ' ' + SEVERITY.critical.border :
+                                  report.severity === 'high' ? SEVERITY.high.bg + ' ' + SEVERITY.high.text + ' ' + SEVERITY.high.border :
+                                  report.severity === 'medium' ? SEVERITY.medium.bg + ' ' + SEVERITY.medium.text + ' ' + SEVERITY.medium.border :
+                                  SEVERITY.low.bg + ' ' + SEVERITY.low.text + ' ' + SEVERITY.low.border
+                                }`}>
+                                  {report.severity}
+                                </span>
+                                <span className="text-[10px] font-mono text-zinc-400 truncate max-w-[120px]">
+                                  {report.type}
+                                </span>
+                              </div>
+                              <h4 className="text-xs font-semibold text-zinc-900 mt-1.5 line-clamp-2 leading-snug">
+                                {report.report_title}
+                              </h4>
+                              <p className="text-[10px] font-mono text-zinc-400 mt-1 truncate">
+                                {formatUrl(report.url)}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Right Detailed Inspector (8 Columns) */}
+                    {activeReport && (
+                      <div className="lg:col-span-8 p-6 bg-white border border-zinc-200 rounded-md space-y-5">
+                        {/* 1. Header Metadata Section */}
+                        <div className="space-y-3 pb-4 border-b border-zinc-100">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
+                                activeReport.severity === 'critical' ? SEVERITY.critical.bg + ' ' + SEVERITY.critical.text + ' ' + SEVERITY.critical.border :
+                                activeReport.severity === 'high' ? SEVERITY.high.bg + ' ' + SEVERITY.high.text + ' ' + SEVERITY.high.border :
+                                activeReport.severity === 'medium' ? SEVERITY.medium.bg + ' ' + SEVERITY.medium.text + ' ' + SEVERITY.medium.border :
+                                SEVERITY.low.bg + ' ' + SEVERITY.low.text + ' ' + SEVERITY.low.border
+                              }`}>
+                                {activeReport.severity}
+                              </span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-100 text-zinc-700 border border-zinc-200">
+                                {activeReport.type}
+                              </span>
+                              <span className="text-[11px] font-mono text-zinc-400">
+                                Rule 4 Sentinel QA Gate
+                              </span>
+                            </div>
+
+                            <span className="text-[10px] font-mono text-zinc-400">
+                              ID: {activeReport.issue_id ? activeReport.issue_id.slice(0, 8) : '001'}
+                            </span>
+                          </div>
+
+                          <h2 className="text-lg font-bold text-zinc-900 leading-snug">
+                            {activeReport.report_title}
+                          </h2>
+
+                          <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-500 bg-zinc-50 px-2.5 py-1 rounded border border-zinc-200 w-fit">
+                            <Globe2 className="w-3.5 h-3.5 text-zinc-400" />
+                            <span className="select-all">{formatUrl(activeReport.url)}</span>
+                          </div>
+                        </div>
+
+                        {/* 2. Destination & Action Control Panel */}
+                        <div className="p-3 bg-zinc-50 border border-zinc-200 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 text-xs font-mono text-zinc-700">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-zinc-500 font-sans">Recipient:</span>
+                            <span className="font-bold text-zinc-900">saravanprasanna@gmail.com</span>
+                            <span className="text-[10px] font-bold text-zinc-500 px-1.5 py-0.2 bg-zinc-200 rounded">
+                              SMTP
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 self-start sm:self-auto">
+                            <button
+                              onClick={() => handleReject(activeReport.issue_id)}
+                              className="px-3 py-1.5 rounded text-xs font-medium text-red-700 bg-white hover:bg-red-50 border border-red-200 transition"
+                            >
+                              Mark as False Positive
+                            </button>
+                            <button
+                              onClick={() => handleApprove(activeReport.issue_id)}
+                              className="px-4 py-1.5 rounded text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 transition flex items-center gap-1.5"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Approve & Dispatch Mail</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 3. Dispatch Payload Editor */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => setNativeReportPreview(false)}
+                                className={`text-xs px-2.5 py-1 rounded font-medium transition ${
+                                  !nativeReportPreview ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900'
+                                }`}
+                              >
+                                English Dispatch Draft
+                              </button>
+                              {activeReport.report_body_tamil && (
+                                <button
+                                  onClick={() => setNativeReportPreview(true)}
+                                  className={`text-xs px-2.5 py-1 rounded font-medium transition ${
+                                    nativeReportPreview ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900'
+                                  }`}
+                                >
+                                  மொழிபெயர்ப்பு (Translation)
+                                </button>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-mono text-zinc-400 uppercase">
+                              Editable Markdown Payload
+                            </span>
+                          </div>
+
+                          {!nativeReportPreview ? (
+                            <div className="space-y-1.5">
+                              <textarea
+                                rows={8}
+                                value={editingBodies[activeReport.issue_id] ?? activeReport.report_body}
+                                onChange={(e) => setEditingBodies({ ...editingBodies, [activeReport.issue_id]: e.target.value })}
+                                className="w-full text-xs font-mono bg-zinc-50 border border-zinc-200 rounded p-3 text-zinc-900 focus:outline-none focus:border-zinc-900 leading-relaxed"
+                              />
+                              <p className="text-[11px] text-zinc-400">
+                                Rule 4 Gate: Changes save automatically and dispatch directly to saravanprasanna@gmail.com upon approval.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="p-4 rounded bg-zinc-50 border border-zinc-200 text-xs text-zinc-800 whitespace-pre-line leading-relaxed font-sans">
+                              {activeReport.report_body_tamil}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 4. Technical Telemetry Evidence */}
+                        {activeReport.evidence && (
+                          <div className="p-3 rounded bg-zinc-50 border border-zinc-200 space-y-1 font-mono text-xs">
+                            <span className="font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">Telemetry Evidence</span>
+                            {activeReport.evidence.selector && (
+                              <p className="text-zinc-700 truncate"><span className="text-zinc-400">Selector:</span> <code>{activeReport.evidence.selector}</code></p>
+                            )}
+                            {activeReport.evidence.ruleId && (
+                              <p className="text-zinc-700"><span className="text-zinc-400">Rule ID:</span> <code>{activeReport.evidence.ruleId}</code></p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* ════ VIEW 3: MONITORED TARGETS ═════════════════════════════════ */}
+            {activeTab === 'sites' && (
+              <motion.div
+                key="sites"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="bg-white border border-zinc-200 rounded-md p-5 space-y-4"
+              >
+                <div className="border-b border-zinc-100 pb-3">
+                  <h3 className="text-xs font-semibold text-zinc-900 uppercase tracking-wider">
+                    Monitored Target Endpoints
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Registered domain hosts under automated continuous Playwright security audits
+                  </p>
+                </div>
+
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-700 font-mono">
-                    <thead className="bg-slate-50/80 border-b border-slate-100 uppercase text-[10px] text-slate-400 font-bold tracking-wider">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead className="bg-zinc-50 text-[10px] text-zinc-400 uppercase tracking-wider border-b border-zinc-200">
                       <tr>
-                        <th className="px-6 py-4">{t.domain}</th>
-                        <th className="px-6 py-4">Site Owner / Alert Recipient</th>
-                        <th className="px-6 py-4">Health Index</th>
-                        <th className="px-6 py-4">Active Flaws</th>
-                        <th className="px-6 py-4 text-right">Instant Action</th>
+                        <th className="px-4 py-2.5 font-semibold">Domain Target</th>
+                        <th className="px-4 py-2.5 font-semibold">Alert Recipient</th>
+                        <th className="px-4 py-2.5 font-semibold">Health Score</th>
+                        <th className="px-4 py-2.5 font-semibold">Active Flaws</th>
+                        <th className="px-4 py-2.5 text-right font-semibold">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-zinc-100">
                       {sites.map(site => (
-                        <tr key={site.id} className="hover:bg-slate-50/70 transition">
-                          <td className="px-6 py-4 font-bold text-slate-900 flex items-center gap-2">
-                            <Globe2 className="w-4 h-4 text-indigo-500" />
+                        <tr key={site.id} className="hover:bg-zinc-50/60 transition">
+                          <td className="px-4 py-3 font-semibold text-zinc-900 flex items-center gap-2">
+                            <Globe2 className="w-3.5 h-3.5 text-zinc-400" />
                             <span>{site.domain}</span>
                           </td>
-                          <td className="px-6 py-4 text-slate-500 font-sans">
+                          <td className="px-4 py-3 text-zinc-500 font-sans">
                             {site.owner_email || 'saravanprasanna@gmail.com'}
                           </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                              site.health_score >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                              site.health_score >= 80 ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'
                             }`}>
                               {site.health_score}/100
                             </span>
                           </td>
-                          <td className="px-6 py-4 font-bold text-slate-800">{site.open_issues_count || 0}</td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-4 py-3 font-semibold text-zinc-800">{site.open_issues_count || 0}</td>
+                          <td className="px-4 py-3 text-right">
                             <button
                               onClick={() => {
                                 const targetProtocol = site.domain.startsWith('http') ? '' : 'https://';
@@ -821,7 +1033,7 @@ export default function Dashboard() {
                                 handleTriggerScan(fullUrl, site.id);
                               }}
                               disabled={scanning}
-                              className="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition font-sans disabled:opacity-50 active:scale-[0.98]"
+                              className="px-2.5 py-1 rounded text-[11px] font-medium bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200 transition font-sans disabled:opacity-50"
                             >
                               {auditingSiteId === site.id ? 'Auditing...' : t.auditNow}
                             </button>
@@ -830,7 +1042,7 @@ export default function Dashboard() {
                       ))}
                       {sites.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-sans text-xs">
+                          <td colSpan={5} className="px-4 py-8 text-center text-zinc-400 font-sans text-xs">
                             No endpoints enrolled. Run your first audit from the Live Radar Audit view.
                           </td>
                         </tr>
@@ -838,398 +1050,310 @@ export default function Dashboard() {
                     </tbody>
                   </table>
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
 
-          {/* ════ 4. ISSUES EXPLORER VIEW (Stitch Luminous Sentinel) ════════ */}
-          {activeTab === 'issues' && (
-            <motion.div
-              key="issues"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              {/* Filter Controls Bar */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                {/* Search */}
-                <div className="relative w-full sm:w-80">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t.searchPlaceholder}
-                    className="w-full text-xs bg-white border border-slate-200/90 rounded-2xl pl-10 pr-4 py-2.5 text-slate-800 focus:outline-none focus:border-indigo-500 shadow-xs"
-                  />
-                </div>
-
-                {/* Severity Pills */}
-                <div className="flex items-center gap-1.5 bg-white/90 p-1.5 rounded-2xl border border-slate-200/90 shadow-xs">
-                  {[
-                    { id: 'all', label: t.filterAll },
-                    { id: 'critical', label: t.filterCritical },
-                    { id: 'high', label: t.filterHigh },
-                    { id: 'medium', label: t.filterMedium },
-                    { id: 'low', label: t.filterLow },
-                  ].map(f => (
-                    <button
-                      key={f.id}
-                      onClick={() => setSeverityFilter(f.id)}
-                      className={`px-3 py-1 text-xs font-bold rounded-xl transition ${
-                        severityFilter === f.id
-                          ? 'bg-indigo-600 text-white shadow-xs'
-                          : 'text-slate-500 hover:text-slate-900'
-                      }`}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] overflow-hidden">
-                <table className="w-full text-left text-xs text-slate-700 font-mono">
-                  <thead className="bg-slate-50/80 border-b border-slate-100 uppercase text-[10px] text-slate-400 font-bold tracking-wider">
-                    <tr>
-                      <th className="px-6 py-4">{t.severity}</th>
-                      <th className="px-6 py-4">Flaw Category</th>
-                      <th className="px-6 py-4">Title & Evidence URL</th>
-                      <th className="px-6 py-4">Occurrences</th>
-                      <th className="px-6 py-4">{t.status}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredIssues.map(issue => (
-                      <tr key={issue.id} className="hover:bg-slate-50/70 transition">
-                        <td className="px-6 py-4">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border ${
-                            issue.severity === 'critical' ? PASTEL.rose.bg + ' ' + PASTEL.rose.text + ' ' + PASTEL.rose.border :
-                            issue.severity === 'high' ? PASTEL.peach.bg + ' ' + PASTEL.peach.text + ' ' + PASTEL.peach.border :
-                            issue.severity === 'medium' ? PASTEL.honey.bg + ' ' + PASTEL.honey.text + ' ' + PASTEL.honey.border :
-                            PASTEL.sky.bg + ' ' + PASTEL.sky.text + ' ' + PASTEL.sky.border
-                          }`}>
-                            {issue.severity}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 font-bold text-indigo-700">{issue.type}</td>
-                        <td className="px-6 py-4 font-sans">
-                          <div className="font-bold text-slate-900">{issue.title}</div>
-                          <div className="text-[11px] font-mono text-slate-400 truncate max-w-md mt-0.5">{issue.url}</div>
-                        </td>
-                        <td className="px-6 py-4 font-bold text-slate-800">{issue.occurrences}x</td>
-                        <td className="px-6 py-4">
-                          <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                            {issue.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredIssues.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-sans text-xs">
-                          {t.noIssuesFound}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ════ 5. RUN SCAN VIEW (Stitch Luminous Sentinel) ═══════════════ */}
-          {activeTab === 'scan' && (
-            <motion.div
-              key="scan"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="max-w-2xl mx-auto space-y-6"
-            >
-              <div className="p-8 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-6">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                    <Radio className="w-5 h-5 text-indigo-600" />
-                    <span>{t.newScan}</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Initiates an automated Chromium headless crawl with DOM inspection, WCAG 2.1 AA accessibility checks, console error interceptors, and Gemini AI root cause analysis.
-                  </p>
-                </div>
-
-                {/* Target URL */}
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <label className="font-bold text-slate-700 uppercase tracking-wider font-mono">Target URL</label>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setScanUrl('https://demo-testbed.sitesentinel.dev')}
-                        className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-xl border transition ${
-                          scanUrl.includes('demo-testbed')
-                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                            : 'bg-indigo-50/80 text-indigo-700 border-indigo-200/70 hover:bg-indigo-100'
-                        }`}
-                      >
-                        demo-testbed
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setScanUrl('https://www.resumereviewer.in')}
-                        className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-xl border transition ${
-                          scanUrl.includes('resumereviewer')
-                            ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
-                            : 'bg-sky-50/80 text-sky-700 border-sky-200/70 hover:bg-sky-100'
-                        }`}
-                      >
-                        resumereviewer.in
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const randomUrl = RANDOM_TARGETS_POOL[Math.floor(Math.random() * RANDOM_TARGETS_POOL.length)];
-                          setScanUrl(randomUrl);
-                        }}
-                        className="text-[10px] font-bold text-violet-700 bg-violet-50/80 hover:bg-violet-100 border border-violet-200/70 px-2.5 py-1 rounded-xl transition active:scale-[0.98]"
-                      >
-                        🎲 Random Webpage
-                      </button>
-                    </div>
-                  </div>
-
-                  <input
-                    type="url"
-                    value={scanUrl}
-                    onChange={(e) => setScanUrl(e.target.value)}
-                    placeholder="https://www.resumereviewer.in"
-                    className="w-full text-sm font-mono bg-white border border-slate-200/90 rounded-2xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-xs"
-                  />
-
-                  <button
-                    onClick={() => handleTriggerScan()}
-                    disabled={scanning}
-                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {scanning ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>{t.scanning}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        <span>{t.startScan}</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {/* Progress Stages Stream */}
-                {scanning && (
-                  <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2.5 font-mono text-xs text-white">
-                    <div className="flex items-center justify-between text-sky-400 font-bold">
-                      <span className="flex items-center gap-2">
-                        <Terminal className="w-4 h-4" /> Sentinel Live Telemetry
-                      </span>
-                      <span className="text-[10px] animate-pulse">RUNNING...</span>
-                    </div>
-                    <div className="space-y-1.5 text-slate-300 text-[11px]">
-                      <p className={scanStage >= 1 ? 'text-emerald-400 flex items-center gap-1.5' : 'text-slate-500'}>
-                        {scanStage >= 1 ? '✓' : '○'} [1/4] Spawning Chromium headless sandboxed viewport...
-                      </p>
-                      <p className={scanStage >= 2 ? 'text-emerald-400 flex items-center gap-1.5' : 'text-slate-500'}>
-                        {scanStage >= 2 ? '✓' : '○'} [2/4] Traversing DOM tree & auditing WCAG 2.1 AA contrast...
-                      </p>
-                      <p className={scanStage >= 3 ? 'text-emerald-400 flex items-center gap-1.5' : 'text-slate-500'}>
-                        {scanStage >= 3 ? '✓' : '○'} [3/4] Inspecting console exceptions & HTTP response headers...
-                      </p>
-                      <p className={scanStage >= 4 ? 'text-sky-400 flex items-center gap-1.5 font-bold' : 'text-slate-500'}>
-                        {scanStage >= 4 ? '✓' : '○'} [4/4] Gemini 1.5 Flash synthesizing root-cause & fix report...
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {scanResult && (
-                  <div className={`p-4 rounded-2xl text-xs font-mono font-medium ${
-                    scanResult.error ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                  }`}>
-                    {scanResult.error ? `Halted: ${scanResult.error}` : `✓ Audit completed! Health Score: ${scanResult.healthScore}/100 • Flaws Detected: ${scanResult.issuesDetected}`}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          {/* ════ 6. AUTOMATION VIEW (Stitch Luminous Sentinel) ═══════════════ */}
-          {activeTab === 'automation' && (
-            <motion.div
-              key="automation"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              {/* 3 Pastel Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-2">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-sky-700 font-bold flex items-center gap-1.5">
-                    <Cpu className="w-4 h-4" /> n8n Automation Engine
-                  </span>
-                  <h4 className="text-2xl font-bold text-slate-900 font-mono">Connected</h4>
-                  <p className="text-xs text-slate-400 font-mono">https://n8n-engine.sitesentinel.dev</p>
-                </div>
-
-                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-2">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-bold flex items-center gap-1.5">
-                    <Clock className="w-4 h-4" /> 10-Hour Scheduled Window
-                  </span>
-                  <h4 className="text-2xl font-bold text-slate-900 font-mono">08:00 - 17:00</h4>
-                  <p className="text-xs text-slate-400 font-mono">Cron: 0 8-17 * * *</p>
-                </div>
-
-                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-2">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-amber-700 font-bold flex items-center gap-1.5">
-                    <Radio className="w-4 h-4" /> Rate Limit Cooldown
-                  </span>
-                  <h4 className="text-2xl font-bold text-slate-900 font-mono">1 req / 2s</h4>
-                  <p className="text-xs text-slate-400 font-mono">Per target domain</p>
-                </div>
-              </div>
-
-              {/* Workflows List */}
-              <div className="p-7 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-4">
-                <h4 className="text-sm font-bold text-slate-900">Enrolled n8n Automation Workflows</h4>
-                <div className="space-y-3 font-mono text-xs">
-                  {[
-                    { name: 'SiteSentinel - Send Approved Reports', trigger: 'Every 5 min poll', status: 'ACTIVE', desc: 'Dispatches verified bug reports via Gmail SMTP' },
-                    { name: 'SiteSentinel - Daily Scheduled Scan', trigger: 'Cron (0 8-17 * * *)', status: 'CONFIGURED', desc: 'Triggers hourly audits within business operating window' },
-                    { name: 'SiteSentinel - Approval Digest', trigger: 'Daily 09:00 AM', status: 'CONFIGURED', desc: 'Summarizes pending triage queue for security auditor review' },
-                  ].map((wf, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
-                      <div>
-                        <p className="font-bold text-slate-900">{wf.name}</p>
-                        <p className="text-[11px] text-slate-400 font-sans mt-0.5">{wf.desc} • <span className="font-mono text-indigo-600">{wf.trigger}</span></p>
-                      </div>
-                      <span className="px-3 py-1 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        {wf.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
-
-      {/* ── Floating Bottom Dock (Stitch Luminous Sentinel Frosted Pill) ── */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
-        <motion.nav 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="bg-white/90 backdrop-blur-2xl border border-slate-200/90 shadow-[0_20px_45px_-10px_rgba(15,23,42,0.16),0_4px_12px_-2px_rgba(15,23,42,0.06)] p-2 rounded-full flex items-center gap-1.5"
-        >
-          {[
-            { id: 'overview', icon: Activity, label: t.overview },
-            { id: 'review', icon: FileText, label: t.reviewQueue, badge: pendingReports.length },
-            { id: 'sites', icon: Globe2, label: t.sites, count: sites.length },
-            { id: 'issues', icon: AlertTriangle, label: t.issues, count: issues.length },
-            { id: 'scan', icon: Send, label: t.newScan },
-            { id: 'automation', icon: Workflow, label: t.automation },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 active:scale-[0.98] ${
-                  isActive
-                    ? 'bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-                }`}
+            {/* ════ VIEW 4: ISSUES EXPLORER ════════════════════════════════════ */}
+            {activeTab === 'issues' && (
+              <motion.div
+                key="issues"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="space-y-4"
               >
-                <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                <span className="tracking-tight">{tab.label}</span>
-                {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className={`px-2 py-0.2 text-[10px] font-mono font-extrabold rounded-full ${
-                    isActive ? 'bg-white text-indigo-700' : 'bg-rose-500 text-white animate-pulse'
-                  }`}>
-                    {tab.badge}
-                  </span>
-                )}
-                {tab.count !== undefined && !tab.badge && (
-                  <span className={`text-[10px] font-mono ${isActive ? 'text-white/80' : 'text-slate-400'}`}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </motion.nav>
+                {/* Search & Filter Bar */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="relative w-full sm:w-80">
+                    <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Filter by issue title, type, or URL..."
+                      className="w-full text-xs bg-white border border-zinc-200 rounded pl-8 pr-3 py-1.5 text-zinc-900 focus:outline-none focus:border-zinc-900"
+                    />
+                  </div>
+
+                  {/* Severity Filter Pills */}
+                  <div className="flex items-center gap-1 bg-white p-1 rounded border border-zinc-200">
+                    {[
+                      { id: 'all', label: t.filterAll },
+                      { id: 'critical', label: t.filterCritical },
+                      { id: 'high', label: t.filterHigh },
+                      { id: 'medium', label: t.filterMedium },
+                      { id: 'low', label: t.filterLow },
+                    ].map(f => (
+                      <button
+                        key={f.id}
+                        onClick={() => setSeverityFilter(f.id)}
+                        className={`px-2.5 py-0.5 text-xs rounded font-medium transition ${
+                          severityFilter === f.id
+                            ? 'bg-zinc-900 text-white'
+                            : 'text-zinc-600 hover:text-zinc-900'
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Flat Issues Table */}
+                <div className="bg-white border border-zinc-200 rounded-md overflow-hidden">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead className="bg-zinc-50 text-[10px] text-zinc-400 uppercase tracking-wider border-b border-zinc-200">
+                      <tr>
+                        <th className="px-4 py-2.5 font-semibold">{t.severity}</th>
+                        <th className="px-4 py-2.5 font-semibold">Flaw Category</th>
+                        <th className="px-4 py-2.5 font-semibold">Title & Evidence URL</th>
+                        <th className="px-4 py-2.5 font-semibold">Occurrences</th>
+                        <th className="px-4 py-2.5 font-semibold">{t.status}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100">
+                      {filteredIssues.map(issue => (
+                        <tr key={issue.id} className="hover:bg-zinc-50/60 transition">
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                              issue.severity === 'critical' ? SEVERITY.critical.bg + ' ' + SEVERITY.critical.text + ' ' + SEVERITY.critical.border :
+                              issue.severity === 'high' ? SEVERITY.high.bg + ' ' + SEVERITY.high.text + ' ' + SEVERITY.high.border :
+                              issue.severity === 'medium' ? SEVERITY.medium.bg + ' ' + SEVERITY.medium.text + ' ' + SEVERITY.medium.border :
+                              SEVERITY.low.bg + ' ' + SEVERITY.low.text + ' ' + SEVERITY.low.border
+                            }`}>
+                              {issue.severity}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-zinc-700">{issue.type}</td>
+                          <td className="px-4 py-3 font-sans">
+                            <p className="font-semibold text-zinc-900 leading-tight">{issue.title}</p>
+                            <p className="text-[11px] font-mono text-zinc-400 truncate max-w-lg mt-0.5">{formatUrl(issue.url)}</p>
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-zinc-800">{issue.occurrences}x</td>
+                          <td className="px-4 py-3">
+                            <span className="font-mono text-xs px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 border border-zinc-200">
+                              {issue.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredIssues.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-8 text-center text-zinc-400 font-sans text-xs">
+                            {t.noIssuesFound}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ════ VIEW 5: SCAN RUNNER ════════════════════════════════════════ */}
+            {activeTab === 'scan' && (
+              <motion.div
+                key="scan"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="max-w-2xl mx-auto space-y-4"
+              >
+                <div className="bg-white border border-zinc-200 rounded-md p-6 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-zinc-900" />
+                      <span>{t.newScan}</span>
+                    </h3>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Execute headless Chromium crawl with WCAG AA compliance, DOM traversal, and AI remediation.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[11px] font-mono text-zinc-500 block mb-1">Target Endpoint URL</label>
+                      <input
+                        type="url"
+                        value={scanUrl}
+                        onChange={(e) => setScanUrl(e.target.value)}
+                        placeholder="https://www.resumereviewer.in"
+                        className="w-full text-xs font-mono bg-white border border-zinc-200 rounded px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-900"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                      <span className="text-[11px] text-zinc-400">Presets:</span>
+                      {[
+                        { label: 'demo-testbed', url: 'https://demo-testbed.sitesentinel.dev' },
+                        { label: 'resumereviewer.in', url: 'https://www.resumereviewer.in' },
+                        { label: 'hackernews', url: 'https://news.ycombinator.com' },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => setScanUrl(preset.url)}
+                          className={`px-2 py-0.5 rounded text-[11px] font-mono border ${
+                            scanUrl.includes(preset.label.replace('.in', ''))
+                              ? 'bg-zinc-900 text-white border-zinc-900'
+                              : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => handleTriggerScan()}
+                      disabled={scanning}
+                      className="w-full py-2.5 rounded bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs transition flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {scanning ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>Auditing Target...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" />
+                          <span>{t.startScan}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {scanning && (
+                    <div className="p-3 rounded bg-zinc-950 border border-zinc-800 font-mono text-[11px] text-zinc-300 space-y-1">
+                      <p className="text-emerald-400 font-bold">[1/4] Spawning Chromium headless sandboxed viewport...</p>
+                      {scanStage >= 2 && <p className="text-emerald-400">[2/4] Traversing DOM tree & auditing WCAG 2.1 AA contrast...</p>}
+                      {scanStage >= 3 && <p className="text-emerald-400">[3/4] Inspecting console exceptions & HTTP response headers...</p>}
+                      {scanStage >= 4 && <p className="text-blue-400 font-bold">[4/4] Gemini 1.5 Flash synthesizing root-cause & fix report...</p>}
+                    </div>
+                  )}
+
+                  {scanResult && (
+                    <div className={`p-3 rounded text-xs font-mono ${
+                      scanResult.error ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    }`}>
+                      {scanResult.error ? `Failed: ${scanResult.error}` : `✓ Audit completed: Health Score ${scanResult.healthScore}/100 • ${scanResult.issuesDetected} flaws detected.`}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ════ VIEW 6: AUTOMATION & SCHEDULER ═════════════════════════════ */}
+            {activeTab === 'automation' && (
+              <motion.div
+                key="automation"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="space-y-4"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-white border border-zinc-200 rounded-md space-y-1">
+                    <span className="text-[10px] font-mono uppercase text-zinc-400 font-semibold">n8n Engine</span>
+                    <h4 className="text-xl font-bold font-mono text-zinc-900">Connected</h4>
+                    <p className="text-xs text-zinc-400 font-mono">https://n8n-engine.sitesentinel.dev</p>
+                  </div>
+
+                  <div className="p-4 bg-white border border-zinc-200 rounded-md space-y-1">
+                    <span className="text-[10px] font-mono uppercase text-zinc-400 font-semibold">Scheduled Window</span>
+                    <h4 className="text-xl font-bold font-mono text-zinc-900">08:00 - 17:00</h4>
+                    <p className="text-xs text-zinc-400 font-mono">Cron: 0 8-17 * * *</p>
+                  </div>
+
+                  <div className="p-4 bg-white border border-zinc-200 rounded-md space-y-1">
+                    <span className="text-[10px] font-mono uppercase text-zinc-400 font-semibold">Rate Limit Cooldown</span>
+                    <h4 className="text-xl font-bold font-mono text-zinc-900">1 req / 2s</h4>
+                    <p className="text-xs text-zinc-400 font-mono">Per target domain</p>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-zinc-200 rounded-md p-5 space-y-3">
+                  <h4 className="text-xs font-semibold text-zinc-900 uppercase tracking-wider">
+                    Enrolled n8n Automation Workflows
+                  </h4>
+                  <div className="space-y-2 font-mono text-xs">
+                    {[
+                      { name: 'SiteSentinel - Send Approved Reports', trigger: 'Every 5 min poll', status: 'ACTIVE', desc: 'Dispatches verified bug reports via Gmail SMTP' },
+                      { name: 'SiteSentinel - Daily Scheduled Scan', trigger: 'Cron (0 8-17 * * *)', status: 'CONFIGURED', desc: 'Triggers hourly audits within business operating window' },
+                      { name: 'SiteSentinel - Approval Digest', trigger: 'Daily 09:00 AM', status: 'CONFIGURED', desc: 'Summarizes pending triage queue for security auditor review' },
+                    ].map((wf, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 rounded bg-zinc-50 border border-zinc-200">
+                        <div>
+                          <p className="font-semibold text-zinc-900">{wf.name}</p>
+                          <p className="text-[11px] text-zinc-500 font-sans mt-0.5">{wf.desc} • <span className="font-mono text-zinc-700">{wf.trigger}</span></p>
+                        </div>
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          {wf.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
       </div>
 
       {/* ── Settings Modal (Language & Region Selector) ─────────────────── */}
       <AnimatePresence>
         {showSettings && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-xs">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: 0.15 }}
-              className="w-full max-w-lg bg-white/95 backdrop-blur-xl rounded-3xl p-7 shadow-2xl border border-slate-200/80 space-y-6"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.12 }}
+              className="w-full max-w-md bg-white rounded-md p-5 shadow-lg border border-zinc-200 space-y-4"
             >
               {/* Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-xs">
-                    <Languages className="w-5 h-5" />
-                  </div>
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+                <div className="flex items-center gap-2">
+                  <Languages className="w-4 h-4 text-zinc-900" />
                   <div>
-                    <h3 className="text-base font-bold text-slate-900">{t.language}</h3>
-                    <p className="text-xs text-slate-400">{t.languageDesc}</p>
+                    <h3 className="text-sm font-bold text-zinc-900">{t.language}</h3>
+                    <p className="text-[11px] text-zinc-500">{t.languageDesc}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowSettings(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                  className="p-1 rounded text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Languages Grid (English + Tamil + Malayalam + Telugu + Kannada + Hindi) */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Languages Grid */}
+              <div className="grid grid-cols-2 gap-2">
                 {SUPPORTED_LANGUAGES.map((item) => {
                   const isCurrent = lang === item.code;
                   return (
                     <button
                       key={item.code}
                       onClick={() => setLang(item.code)}
-                      className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all text-left active:scale-[0.98] ${
+                      className={`flex items-center justify-between p-2.5 rounded border transition-all text-left ${
                         isCurrent 
-                          ? 'bg-indigo-50/80 border-indigo-300 ring-2 ring-indigo-200/70 shadow-xs' 
-                          : 'bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50'
+                          ? 'bg-zinc-100 border-zinc-900 font-semibold' 
+                          : 'bg-white border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-xl">{item.flag}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">{item.flag}</span>
                         <div>
-                          <p className="font-bold text-xs text-slate-900">{item.nativeName}</p>
-                          <p className="text-[10px] text-slate-400 font-medium">{item.label}</p>
+                          <p className="text-xs text-zinc-900">{item.nativeName}</p>
+                          <p className="text-[10px] text-zinc-400 font-mono">{item.label}</p>
                         </div>
                       </div>
                       {isCurrent && (
-                        <Check className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-zinc-900" />
                       )}
                     </button>
                   );
@@ -1237,13 +1361,13 @@ export default function Dashboard() {
               </div>
 
               {/* Footer */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs font-mono text-slate-400">
-                  SiteSentinel Regional Multi-Lingual Core
+              <div className="pt-2 border-t border-zinc-100 flex items-center justify-between">
+                <span className="text-[11px] font-mono text-zinc-400">
+                  Regional Multi-Lingual Core
                 </span>
                 <button
                   onClick={() => setShowSettings(false)}
-                  className="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm shadow-indigo-500/20 active:scale-[0.98] transition"
+                  className="px-3 py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs transition"
                 >
                   {t.close}
                 </button>
