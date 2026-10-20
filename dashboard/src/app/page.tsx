@@ -88,6 +88,7 @@ export default function Dashboard() {
   // Scan state
   const [scanUrl, setScanUrl] = useState('https://www.resumereviewer.in');
   const [scanning, setScanning] = useState(false);
+  const [auditingSiteId, setAuditingSiteId] = useState<string | null>(null);
   const [scanStage, setScanStage] = useState(0);
   const [scanResult, setScanResult] = useState<any>(null);
 
@@ -160,9 +161,12 @@ export default function Dashboard() {
     }
   };
 
-  const handleTriggerScan = async (targetUrl?: string) => {
+  const handleTriggerScan = async (targetUrl?: string, siteId?: string) => {
     const url = targetUrl || scanUrl;
     setScanning(true);
+    if (siteId) {
+      setAuditingSiteId(siteId);
+    }
     setScanStage(1);
     setScanResult(null);
 
@@ -192,6 +196,7 @@ export default function Dashboard() {
       clearTimeout(s2);
       setTimeout(() => {
         setScanning(false);
+        setAuditingSiteId(null);
         setScanStage(0);
       }, 1400);
     }
@@ -245,18 +250,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Right Tools: Fast Audit, Settings, Sync */}
+        {/* Right Tools: Settings & Sync */}
         <div className="flex items-center gap-2.5 flex-shrink-0">
-          {/* Quick Audit Button */}
-          <button
-            onClick={() => handleTriggerScan(scanUrl || 'https://www.resumereviewer.in')}
-            disabled={scanning}
-            className="hidden md:flex items-center gap-2 text-xs font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white px-4 py-2 rounded-xl shadow-sm shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
-          >
-            <Zap className="w-3.5 h-3.5 fill-current" />
-            <span>Fast Audit</span>
-          </button>
-
           {/* Settings Button (Language & Preferences) */}
           <button
             onClick={() => setShowSettings(true)}
@@ -556,7 +551,7 @@ export default function Dashboard() {
             </motion.div>
           )}
 
-          {/* ════ 2. REVIEW QUEUE STUDIO (Stitch Luminous Sentinel Split Inspector) ════ */}
+          {/* ════ 2. REVIEW QUEUE STUDIO (Stitch Balanced Studio Layout) ════ */}
           {activeTab === 'review' && (
             <motion.div
               key="review"
@@ -579,9 +574,9 @@ export default function Dashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  {/* Left Column: List of Pending Reports */}
-                  <div className="lg:col-span-5 space-y-3">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                  {/* Left Column: Master List of Pending Reports (4 Columns) */}
+                  <div className="lg:col-span-4 space-y-3">
                     <div className="flex items-center justify-between px-2">
                       <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
                         {t.pendingApprovals} ({pendingReports.length})
@@ -591,13 +586,18 @@ export default function Dashboard() {
                     <div className="space-y-2.5">
                       {pendingReports.map(report => {
                         const isSelected = activeReport?.id === report.id;
+                        const cleanUrl = (report.url || '')
+                          .replace('sitesentinel.devtestbed', 'sitesentinel.dev/testbed')
+                          .replace('sitesentinel.devbroken', 'sitesentinel.dev/broken-link-target')
+                          .replace('sitesentinel.devslow', 'sitesentinel.dev/slow');
+
                         return (
                           <div
                             key={report.id}
                             onClick={() => setSelectedReportId(report.id)}
-                            className={`p-4 rounded-3xl border transition-all cursor-pointer shadow-xs ${
+                            className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-xs ${
                               isSelected
-                                ? 'bg-indigo-50/70 border-indigo-300 ring-2 ring-indigo-200/60 shadow-indigo-500/5'
+                                ? 'bg-indigo-50/70 border-indigo-400 border-l-4 border-l-indigo-600 ring-2 ring-indigo-200/50 shadow-indigo-500/10'
                                 : 'bg-white/95 border-slate-200/70 hover:border-slate-300 hover:bg-slate-50/60'
                             }`}
                           >
@@ -610,15 +610,16 @@ export default function Dashboard() {
                               }`}>
                                 {report.severity}
                               </span>
-                              <span className="text-[10px] font-mono text-slate-400 truncate max-w-[140px]">
+                              <span className="text-[10px] font-mono text-slate-400 truncate max-w-[130px]">
                                 {report.type}
                               </span>
                             </div>
-                            <h4 className="text-sm font-bold text-slate-900 mt-2 line-clamp-1">
+                            <h4 className="text-xs font-bold text-slate-900 mt-2 line-clamp-2 leading-snug">
                               {report.report_title}
                             </h4>
-                            <p className="text-[11px] font-mono text-slate-500 mt-1 truncate">
-                              {report.url}
+                            <p className="text-[11px] font-mono text-slate-500 mt-1.5 truncate flex items-center gap-1">
+                              <Globe2 className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                              <span className="truncate">{cleanUrl}</span>
                             </p>
                           </div>
                         );
@@ -626,37 +627,70 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Right Column: Detailed Inspector */}
+                  {/* Right Column: Detailed Inspector Studio (8 Columns) */}
                   {activeReport && (
-                    <div className="lg:col-span-7 p-7 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-6">
-                      {/* Top Header & Actions */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-4">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-indigo-50 text-indigo-700 border border-indigo-200">
-                              {activeReport.type}
-                            </span>
-                            <h3 className="text-base font-bold text-slate-900">{activeReport.report_title}</h3>
-                          </div>
-                          <p className="text-xs font-mono text-slate-400 mt-1">{activeReport.url}</p>
-                          <div className="mt-2 flex items-center gap-1.5 text-[11px] font-mono text-emerald-700 bg-emerald-50/80 px-2.5 py-0.5 rounded-lg border border-emerald-100 w-fit">
-                            <Mail className="w-3 h-3 text-emerald-600" />
-                            <span>Destination: saravanprasanna@gmail.com</span>
-                          </div>
+                    <div className="lg:col-span-8 p-7 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-6">
+                      {/* 1. Header Metadata Section */}
+                      <div className="space-y-3 pb-5 border-b border-slate-100">
+                        {/* Badges Row */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border ${
+                            activeReport.severity === 'critical' ? PASTEL.rose.bg + ' ' + PASTEL.rose.text + ' ' + PASTEL.rose.border :
+                            activeReport.severity === 'high' ? PASTEL.peach.bg + ' ' + PASTEL.peach.text + ' ' + PASTEL.peach.border :
+                            activeReport.severity === 'medium' ? PASTEL.honey.bg + ' ' + PASTEL.honey.text + ' ' + PASTEL.honey.border :
+                            PASTEL.sky.bg + ' ' + PASTEL.sky.text + ' ' + PASTEL.sky.border
+                          }`}>
+                            {activeReport.severity}
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-slate-100 text-slate-700 border border-slate-200">
+                            {activeReport.type}
+                          </span>
+                          <span className="text-[11px] font-mono text-slate-400 ml-1">
+                            Rule 4 Triage Studio
+                          </span>
                         </div>
 
-                        {/* Action buttons */}
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* Title Heading */}
+                        <h3 className="text-xl font-extrabold text-slate-900 tracking-tight leading-snug">
+                          {activeReport.report_title}
+                        </h3>
+
+                        {/* Target Evidence URL */}
+                        <div className="flex items-center gap-1.5 text-xs font-mono text-slate-500">
+                          <Globe2 className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                          <span className="truncate">
+                            {(activeReport.url || '')
+                              .replace('sitesentinel.devtestbed', 'sitesentinel.dev/testbed')
+                              .replace('sitesentinel.devbroken', 'sitesentinel.dev/broken-link-target')
+                              .replace('sitesentinel.devslow', 'sitesentinel.dev/slow')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 2. Action & Outbound Dispatch Control Bar */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 px-4 rounded-2xl bg-slate-50/90 border border-slate-200/80 gap-3">
+                        {/* Destination Indicator */}
+                        <div className="flex items-center gap-2 text-xs font-mono text-slate-700">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+                          <span className="font-semibold text-slate-500">Destination:</span>
+                          <span className="font-bold text-slate-900 font-mono">saravanprasanna@gmail.com</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100/90 text-emerald-800 font-bold border border-emerald-200 hidden md:inline">
+                            Gmail SMTP
+                          </span>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
                           <button
                             onClick={() => handleReject(activeReport.issue_id)}
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-rose-700 bg-rose-50/80 hover:bg-rose-100/80 border border-rose-200/80 transition active:scale-[0.98]"
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-700 bg-white hover:bg-rose-50 border border-rose-200/90 shadow-2xs transition active:scale-[0.98]"
                           >
-                            <XCircle className="w-4 h-4" />
-                            <span>{t.reject}</span>
+                            <XCircle className="w-4 h-4 text-rose-500" />
+                            <span>Mark as False Positive</span>
                           </button>
                           <button
                             onClick={() => handleApprove(activeReport.issue_id)}
-                            className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-sm shadow-emerald-500/20 transition active:scale-[0.98]"
+                            className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 via-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-sm shadow-emerald-500/20 transition active:scale-[0.98]"
                           >
                             <CheckCircle2 className="w-4 h-4" />
                             <span>Approve & Dispatch Mail</span>
@@ -664,51 +698,55 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Language Switch Tabs */}
-                      <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                        <button
-                          onClick={() => setNativeReportPreview(false)}
-                          className={`text-xs font-bold px-3.5 py-1.5 rounded-xl transition ${
-                            !nativeReportPreview ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-slate-400 hover:text-slate-800'
-                          }`}
-                        >
-                          English Dispatch Draft
-                        </button>
-                        {activeReport.report_body_tamil && (
-                          <button
-                            onClick={() => setNativeReportPreview(true)}
-                            className={`text-xs font-bold px-3.5 py-1.5 rounded-xl transition ${
-                              nativeReportPreview ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-slate-400 hover:text-slate-800'
-                            }`}
-                          >
-                            மொழிபெயர்ப்பு (Translation Preview)
-                          </button>
+                      {/* 3. Language Switch & Dispatch Payload Editor */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                          <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                            <button
+                              onClick={() => setNativeReportPreview(false)}
+                              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition ${
+                                !nativeReportPreview ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                              }`}
+                            >
+                              English Dispatch Draft
+                            </button>
+                            {activeReport.report_body_tamil && (
+                              <button
+                                onClick={() => setNativeReportPreview(true)}
+                                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition ${
+                                  nativeReportPreview ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                                }`}
+                              >
+                                மொழிபெயர்ப்பு (Translation Preview)
+                              </button>
+                            )}
+                          </div>
+                          <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider font-semibold hidden sm:inline">
+                            Editable Markdown
+                          </span>
+                        </div>
+
+                        {/* Editor Body */}
+                        {!nativeReportPreview ? (
+                          <div className="space-y-2">
+                            <textarea
+                              rows={9}
+                              value={editingBodies[activeReport.issue_id] ?? activeReport.report_body}
+                              onChange={(e) => setEditingBodies({ ...editingBodies, [activeReport.issue_id]: e.target.value })}
+                              className="w-full text-xs font-mono bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 text-slate-800 focus:outline-none focus:border-indigo-500 leading-relaxed shadow-inner"
+                            />
+                            <p className="text-[11px] text-slate-400 px-1">
+                              Rule 4 Outbound Gate: Changes are bundled directly into the email transport upon approval.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="p-5 rounded-2xl bg-indigo-50/40 border border-indigo-100 text-xs text-slate-800 whitespace-pre-line leading-relaxed font-sans shadow-xs">
+                            {activeReport.report_body_tamil}
+                          </div>
                         )}
                       </div>
 
-                      {/* Body Content */}
-                      {!nativeReportPreview ? (
-                        <div className="space-y-2">
-                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
-                            Outgoing SMTP Dispatch Payload (Editable)
-                          </label>
-                          <textarea
-                            rows={8}
-                            value={editingBodies[activeReport.issue_id] ?? activeReport.report_body}
-                            onChange={(e) => setEditingBodies({ ...editingBodies, [activeReport.issue_id]: e.target.value })}
-                            className="w-full text-xs font-mono bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 text-slate-800 focus:outline-none focus:border-indigo-500 leading-relaxed shadow-inner"
-                          />
-                          <p className="text-[11px] text-slate-400">
-                            Updates are saved automatically and packaged directly into the Gmail SMTP transport upon approval.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="p-5 rounded-2xl bg-indigo-50/40 border border-indigo-100 text-xs text-slate-800 whitespace-pre-line leading-relaxed font-sans shadow-xs">
-                          {activeReport.report_body_tamil}
-                        </div>
-                      )}
-
-                      {/* Technical Evidence Accordion */}
+                      {/* 4. Technical Telemetry Evidence Box */}
                       {activeReport.evidence && (
                         <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-1.5 font-mono text-xs">
                           <span className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">{t.evidence}</span>
@@ -780,12 +818,12 @@ export default function Dashboard() {
                                 const targetProtocol = site.domain.startsWith('http') ? '' : 'https://';
                                 const fullUrl = site.domain.startsWith('http') ? site.domain : `${targetProtocol}${site.domain}/`;
                                 setScanUrl(fullUrl);
-                                handleTriggerScan(fullUrl);
+                                handleTriggerScan(fullUrl, site.id);
                               }}
                               disabled={scanning}
                               className="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition font-sans disabled:opacity-50 active:scale-[0.98]"
                             >
-                              {scanning && scanUrl.includes(site.domain) ? 'Auditing...' : t.auditNow}
+                              {auditingSiteId === site.id ? 'Auditing...' : t.auditNow}
                             </button>
                           </td>
                         </tr>

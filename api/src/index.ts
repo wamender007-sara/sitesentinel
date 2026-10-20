@@ -419,7 +419,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.get('/sites', async () => {
     const pool = getPool();
     const res = await pool.query(`
-      SELECT 
+      SELECT DISTINCT ON (
+        CASE WHEN s.domain LIKE '%localhost%' THEN 'demo-testbed.sitesentinel.dev' ELSE s.domain END
+      )
         s.id,
         CASE WHEN s.domain LIKE '%localhost%' THEN 'demo-testbed.sitesentinel.dev' ELSE s.domain END as domain,
         CASE WHEN s.name LIKE '%localhost%' THEN 'Demo QA Testbed' ELSE s.name END as name,
@@ -430,9 +432,12 @@ export async function buildApp(): Promise<FastifyInstance> {
         s.updated_at,
         (SELECT count(*) FROM issues i WHERE i.site_id = s.id AND i.status NOT IN ('resolved', 'rejected', 'rejected_by_ai')) as open_issues_count
       FROM sites s
-      ORDER BY s.health_score ASC
+      ORDER BY 
+        CASE WHEN s.domain LIKE '%localhost%' THEN 'demo-testbed.sitesentinel.dev' ELSE s.domain END,
+        s.updated_at DESC
     `);
-    return res.rows;
+    const sorted = [...res.rows].sort((a, b) => (a.health_score ?? 100) - (b.health_score ?? 100));
+    return sorted;
   });
 
   app.get('/sites/:id/health-history', async (req, reply) => {
@@ -733,14 +738,14 @@ export async function buildApp(): Promise<FastifyInstance> {
         r.status,
         r.email_to,
         REPLACE(r.report_title, 'localhost:4000', 'demo-testbed') as report_title,
-        REPLACE(REPLACE(REPLACE(r.report_body, 'http://localhost:4000', 'https://demo-testbed.sitesentinel.dev'), 'http://localhost/4000', 'https://demo-testbed.sitesentinel.dev'), 'http://localhost/3000', 'https://demo-testbed.sitesentinel.dev') as report_body,
+        REPLACE(REPLACE(REPLACE(REPLACE(r.report_body, 'http://localhost:4000', 'https://demo-testbed.sitesentinel.dev'), 'http://localhost/4000', 'https://demo-testbed.sitesentinel.dev'), 'http://localhost/3000', 'https://demo-testbed.sitesentinel.dev'), 'sitesentinel.devtestbed', 'sitesentinel.dev/testbed') as report_body,
         r.report_body_tamil,
         r.approved_by,
         r.approved_at,
         r.sent_at,
         r.created_at,
         r.updated_at,
-        REPLACE(REPLACE(REPLACE(i.url, 'http://localhost:4000', 'https://demo-testbed.sitesentinel.dev'), 'http://localhost/4000', 'https://demo-testbed.sitesentinel.dev'), 'http://localhost/3000', 'https://demo-testbed.sitesentinel.dev') as url,
+        REPLACE(REPLACE(REPLACE(REPLACE(i.url, 'http://localhost:4000', 'https://demo-testbed.sitesentinel.dev'), 'http://localhost/4000', 'https://demo-testbed.sitesentinel.dev'), 'http://localhost/3000', 'https://demo-testbed.sitesentinel.dev'), 'sitesentinel.devtestbed', 'sitesentinel.dev/testbed') as url,
         i.severity,
         i.type,
         i.evidence,
