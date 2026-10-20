@@ -303,7 +303,16 @@ export async function buildApp(): Promise<FastifyInstance> {
             deductions += 5;
           }
 
-          const healthScore = Math.max(25, Math.min(100, 100 - deductions));
+          // Standardized Health Score Calculation (100 - penalties)
+          // critical: -15 | high: -10 | medium: -5 | low: -2
+          const totalPenalty = issues.reduce((acc, issue) => {
+            if (issue.severity === 'critical') return acc + 15;
+            if (issue.severity === 'high') return acc + 10;
+            if (issue.severity === 'medium') return acc + 5;
+            if (issue.severity === 'low') return acc + 2;
+            return acc;
+          }, 0);
+          const healthScore = Math.max(0, Math.min(100, 100 - totalPenalty));
 
           scanResult = {
             url: parsed.data.url,

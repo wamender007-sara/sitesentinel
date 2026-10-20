@@ -770,12 +770,15 @@ export default function Dashboard() {
                           <td className="px-6 py-4 text-right">
                             <button
                               onClick={() => {
-                                setScanUrl(`http://${site.domain}/`);
-                                setActiveTab('scan');
+                                const targetProtocol = site.domain.includes('localhost') ? 'http://' : 'https://';
+                                const fullUrl = `${targetProtocol}${site.domain}/`;
+                                setScanUrl(fullUrl);
+                                handleTriggerScan(fullUrl);
                               }}
-                              className="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition font-sans"
+                              disabled={scanning}
+                              className="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition font-sans disabled:opacity-50"
                             >
-                              {t.auditNow}
+                              {scanning && scanUrl.includes(site.domain) ? 'Auditing...' : t.auditNow}
                             </button>
                           </td>
                         </tr>
