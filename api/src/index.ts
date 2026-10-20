@@ -46,7 +46,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         description: 'Automated Web Quality & Accessibility Scanner API with AI Triage',
         version: '1.0.0',
       },
-      servers: [{ url: `http://localhost:${PORT}` }],
+      servers: [{ url: process.env.RENDER_EXTERNAL_URL || 'https://sitesentinel-api.onrender.com' }],
     },
   });
 

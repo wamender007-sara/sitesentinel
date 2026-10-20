@@ -49,14 +49,14 @@ import {
 import { fetchApi } from '../lib/api';
 import { translations, Language, SUPPORTED_LANGUAGES } from '../lib/i18n';
 
-// ── Pastel Color Palette ─────────────────────────────────────────────────────
+// ── Luminous Sentinel Color Tokens (Stitch MCP Design System) ────────────────
 const PASTEL = {
-  rose: { bg: 'bg-[#fff1f2]', text: 'text-[#e11d48]', border: 'border-[#fecdd3]', bar: '#fb7185' },
-  peach: { bg: 'bg-[#fff7ed]', text: 'text-[#c2410c]', border: 'border-[#fed7aa]', bar: '#fb923c' },
-  honey: { bg: 'bg-[#fefce8]', text: 'text-[#a16207]', border: 'border-[#fef08a]', bar: '#facc15' },
-  sky: { bg: 'bg-[#f0f9ff]', text: 'text-[#0369a1]', border: 'border-[#bae6fd]', bar: '#38bdf8' },
-  mint: { bg: 'bg-[#ecfdf5]', text: 'text-[#047857]', border: 'border-[#a7f3d0]', bar: '#34d399' },
-  lavender: { bg: 'bg-[#f5f3ff]', text: 'text-[#6d28d9]', border: 'border-[#ddd6fe]', bar: '#a78bfa' },
+  rose: { bg: 'bg-rose-50/80', text: 'text-rose-600', border: 'border-rose-200/80', bar: '#fb7185', fill: '#fff1f2' },
+  peach: { bg: 'bg-orange-50/80', text: 'text-orange-600', border: 'border-orange-200/80', bar: '#fb923c', fill: '#fff7ed' },
+  honey: { bg: 'bg-amber-50/80', text: 'text-amber-600', border: 'border-amber-200/80', bar: '#f59e0b', fill: '#fefce8' },
+  sky: { bg: 'bg-sky-50/80', text: 'text-sky-600', border: 'border-sky-200/80', bar: '#38bdf8', fill: '#f0f9ff' },
+  mint: { bg: 'bg-emerald-50/80', text: 'text-emerald-600', border: 'border-emerald-200/80', bar: '#34d399', fill: '#f0fdf4' },
+  lavender: { bg: 'bg-indigo-50/80', text: 'text-indigo-600', border: 'border-indigo-200/80', bar: '#818cf8', fill: '#f5f3ff' },
 };
 
 const RANDOM_TARGETS_POOL = [
@@ -227,18 +227,18 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#fcfcfd] text-slate-800 antialiased font-sans pb-28">
-      {/* ── Top Header Bar (Clean, Uncluttered, No-Wrap) ─────────────────── */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] px-6 lg:px-12 h-16 flex items-center justify-between gap-4">
+      {/* ── Top Header Bar (Stitch Luminous Sentinel Frosted Glass) ───────── */}
+      <header className="sticky top-0 z-30 bg-white/85 backdrop-blur-xl border-b border-slate-200/60 shadow-[0_1px_3px_rgba(15,23,42,0.03)] px-6 lg:px-12 h-16 flex items-center justify-between gap-4 transition-all">
         {/* Brand & Status */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-500 via-sky-400 to-teal-300 flex items-center justify-center text-white shadow-sm shadow-indigo-100">
+        <div className="flex items-center gap-3.5 flex-shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 ring-1 ring-white/50">
             <ShieldCheck className="w-5 h-5 stroke-[2.2]" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-base tracking-tight text-slate-900">{t.appTitle}</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
-                PRO
+              <span className="font-extrabold text-base tracking-tight text-slate-900 font-sans">{t.appTitle}</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 border border-indigo-200/80 shadow-xs">
+                PRO SENTINEL
               </span>
             </div>
             <p className="text-[11px] text-slate-400 font-medium hidden sm:block">{t.subtitle}</p>
@@ -246,12 +246,12 @@ export default function Dashboard() {
         </div>
 
         {/* Right Tools: Fast Audit, Settings, Sync */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2.5 flex-shrink-0">
           {/* Quick Audit Button */}
           <button
             onClick={() => handleTriggerScan(scanUrl || 'https://www.resumereviewer.in')}
             disabled={scanning}
-            className="hidden md:flex items-center gap-2 text-xs font-semibold bg-gradient-to-r from-indigo-500 to-sky-500 hover:from-indigo-600 hover:to-sky-600 text-white px-3.5 py-2 rounded-xl shadow-sm transition disabled:opacity-50"
+            className="hidden md:flex items-center gap-2 text-xs font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white px-4 py-2 rounded-xl shadow-sm shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
           >
             <Zap className="w-3.5 h-3.5 fill-current" />
             <span>Fast Audit</span>
@@ -260,19 +260,19 @@ export default function Dashboard() {
           {/* Settings Button (Language & Preferences) */}
           <button
             onClick={() => setShowSettings(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/70 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 transition shadow-sm"
+            className="flex items-center gap-2 px-3 py-1.5 bg-white/90 hover:bg-slate-50 border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 transition shadow-xs active:scale-[0.98]"
             title={t.settings}
           >
             <span className="text-sm">{currentLangInfo.flag}</span>
-            <span className="hidden sm:inline font-mono">{currentLangInfo.nativeName}</span>
-            <Settings className="w-3.5 h-3.5 text-slate-500" />
+            <span className="hidden sm:inline font-mono font-semibold">{currentLangInfo.nativeName}</span>
+            <Settings className="w-3.5 h-3.5 text-slate-400" />
           </button>
 
           {/* Sync Button */}
           <button
             onClick={loadData}
             title="Refresh Data"
-            className="p-2 text-slate-500 hover:text-indigo-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-sm transition"
+            className="p-2 text-slate-500 hover:text-indigo-600 bg-white/90 hover:bg-slate-50 border border-slate-200/90 rounded-xl shadow-xs transition active:scale-[0.98]"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -293,20 +293,23 @@ export default function Dashboard() {
               className="space-y-6"
             >
               {/* Top Banner: Rule 4 Human-in-the-Loop Guarantee */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 px-6 rounded-3xl bg-gradient-to-r from-indigo-50/70 via-sky-50/50 to-teal-50/40 border border-indigo-100/80 shadow-sm gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 px-6 rounded-3xl bg-gradient-to-r from-indigo-50/70 via-sky-50/50 to-teal-50/40 border border-indigo-100/90 shadow-[0_2px_10px_-3px_rgba(99,102,241,0.06)] gap-3 backdrop-blur-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100 flex-shrink-0">
-                    <Lock className="w-4 h-4" />
+                  <div className="w-9 h-9 rounded-2xl bg-white flex items-center justify-center text-indigo-600 shadow-xs border border-indigo-100 flex-shrink-0">
+                    <Lock className="w-4 h-4 stroke-[2.2]" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900 tracking-tight">{t.rule4Title}</h4>
+                    <h4 className="text-xs font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                      <span>{t.rule4Title}</span>
+                      <span className="text-[10px] font-mono px-2 py-0.2 bg-emerald-100/80 text-emerald-800 rounded-full font-bold">ACTIVE</span>
+                    </h4>
                     <p className="text-[11px] text-slate-500">{t.rule4Notice}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto flex-shrink-0">
                   <button
                     onClick={() => setActiveTab('review')}
-                    className="text-xs font-bold text-indigo-700 bg-white hover:bg-indigo-50 px-3.5 py-1.5 rounded-xl border border-indigo-200 shadow-sm transition flex items-center gap-1.5"
+                    className="text-xs font-bold text-indigo-700 bg-white hover:bg-indigo-50/80 px-4 py-2 rounded-2xl border border-indigo-200/90 shadow-xs transition flex items-center gap-1.5 active:scale-[0.98]"
                   >
                     <span>{pendingReports.length} {t.pendingApprovals}</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
@@ -314,91 +317,91 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Bento Grid: 4 Pastel KPI Cards */}
+              {/* Bento Grid: 4 Stitch Luminous Sentinel KPI Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* 1. Global Health Index */}
-                <div className="p-6 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] hover:border-indigo-200 hover:shadow-indigo-500/5 transition-all flex flex-col justify-between">
                   <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{t.avgHealth}</span>
-                    <span className="p-2 rounded-2xl bg-emerald-50 text-emerald-600">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">{t.avgHealth}</span>
+                    <span className="p-2 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100/60 shadow-xs">
                       <Radio className="w-4 h-4 animate-pulse" />
                     </span>
                   </div>
                   <div className="mt-4 flex items-baseline gap-2">
-                    <span className={`text-4xl font-extrabold tracking-tight font-mono ${
+                    <span className={`text-4xl font-black tracking-tight font-mono ${
                       avgHealth >= 80 ? 'text-emerald-600' : avgHealth >= 50 ? 'text-amber-600' : 'text-rose-600'
                     }`}>
                       {avgHealth}
                     </span>
-                    <span className="text-sm font-bold text-slate-400">/ 100</span>
+                    <span className="text-xs font-bold text-slate-400 font-mono">/ 100</span>
                   </div>
-                  <div className="mt-3 flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold bg-emerald-50/80 px-2.5 py-1 rounded-xl w-fit">
-                    <Check className="w-3.5 h-3.5" /> {avgHealth >= 80 ? 'Grade A' : 'Grade C'}
+                  <div className="mt-3 flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold bg-emerald-50/90 border border-emerald-200/60 px-2.5 py-1 rounded-xl w-fit">
+                    <Check className="w-3.5 h-3.5" /> {avgHealth >= 80 ? 'Grade A (Operational)' : 'Grade C (Requires Attention)'}
                   </div>
                 </div>
 
                 {/* 2. Monitored Sites */}
-                <div className="p-6 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] hover:border-indigo-200 hover:shadow-indigo-500/5 transition-all flex flex-col justify-between">
                   <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{t.totalSites}</span>
-                    <span className="p-2 rounded-2xl bg-sky-50 text-sky-600">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">{t.totalSites}</span>
+                    <span className="p-2 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100/60 shadow-xs">
                       <Globe2 className="w-4 h-4" />
                     </span>
                   </div>
                   <div className="mt-4 flex items-baseline gap-2">
-                    <span className="text-4xl font-extrabold tracking-tight font-mono text-slate-900">
+                    <span className="text-4xl font-black tracking-tight font-mono text-slate-900">
                       {stats?.totalSites ?? sites.length}
                     </span>
-                    <span className="text-xs font-bold text-slate-400">allowlisted</span>
+                    <span className="text-xs font-bold text-slate-400 font-mono">allowlisted</span>
                   </div>
-                  <p className="mt-3 text-[11px] text-slate-500 font-medium">Targets enrolled in daily audits</p>
+                  <p className="mt-3 text-[11px] text-slate-500 font-medium">Continuous Playwright monitoring</p>
                 </div>
 
                 {/* 3. Open Issues */}
-                <div className="p-6 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] hover:border-indigo-200 hover:shadow-indigo-500/5 transition-all flex flex-col justify-between">
                   <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{t.openIssues}</span>
-                    <span className="p-2 rounded-2xl bg-amber-50 text-amber-600">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">{t.openIssues}</span>
+                    <span className="p-2 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100/60 shadow-xs">
                       <AlertTriangle className="w-4 h-4" />
                     </span>
                   </div>
                   <div className="mt-4 flex items-baseline gap-2">
-                    <span className="text-4xl font-extrabold tracking-tight font-mono text-amber-600">
+                    <span className="text-4xl font-black tracking-tight font-mono text-amber-600">
                       {stats?.openIssues ?? issues.length}
                     </span>
-                    <span className="text-xs font-bold text-slate-400">flaws</span>
+                    <span className="text-xs font-bold text-slate-400 font-mono">flaws</span>
                   </div>
-                  <p className="mt-3 text-[11px] text-slate-500 font-medium">Deduplicated via SHA-256</p>
+                  <p className="mt-3 text-[11px] text-slate-500 font-medium">Deduplicated via SHA-256 fingerprint</p>
                 </div>
 
                 {/* 4. Critical Issues */}
-                <div className="p-6 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] hover:border-indigo-200 hover:shadow-indigo-500/5 transition-all flex flex-col justify-between">
                   <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{t.criticalIssues}</span>
-                    <span className="p-2 rounded-2xl bg-rose-50 text-rose-600">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">{t.criticalIssues}</span>
+                    <span className="p-2 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100/60 shadow-xs">
                       <XCircle className="w-4 h-4" />
                     </span>
                   </div>
                   <div className="mt-4 flex items-baseline gap-2">
-                    <span className="text-4xl font-extrabold tracking-tight font-mono text-rose-600">
+                    <span className="text-4xl font-black tracking-tight font-mono text-rose-600">
                       {stats?.criticalIssues ?? issues.filter(i => i.severity === 'critical').length}
                     </span>
-                    <span className="text-xs font-bold text-slate-400">critical</span>
+                    <span className="text-xs font-bold text-slate-400 font-mono">critical</span>
                   </div>
-                  <p className="mt-3 text-[11px] text-rose-600 font-semibold">Immediate attention advised</p>
+                  <p className="mt-3 text-[11px] text-rose-600 font-semibold">Immediate triage required</p>
                 </div>
               </div>
 
               {/* Main Grid: Clean Bar Chart + Fast Launcher */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Clean Severity Bar Chart (Zero Overlap!) */}
-                <div className="lg:col-span-7 p-7 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] space-y-4">
+                <div className="lg:col-span-7 p-7 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-bold text-slate-900 tracking-tight">Flaw Distribution by Severity</h3>
                       <p className="text-xs text-slate-400">Categorized from Playwright heuristic inspection passes</p>
                     </div>
-                    <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">
+                    <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200/60 shadow-xs">
                       Live Telemetry
                     </span>
                   </div>
@@ -426,7 +429,7 @@ export default function Dashboard() {
                           content={({ active, payload, label }) => {
                             if (active && payload && payload.length) {
                               return (
-                                <div className="bg-white px-3.5 py-2.5 rounded-2xl shadow-xl border border-slate-200/80 text-xs">
+                                <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-200/90 text-xs">
                                   <p className="font-bold text-slate-800">{label}</p>
                                   <p className="text-slate-500 font-medium mt-0.5">
                                     Flaws Detected: <span className="font-bold text-indigo-600 font-mono text-sm">{payload[0].value}</span>
@@ -448,7 +451,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Quick Audit Launcher Card */}
-                <div className="lg:col-span-5 p-7 rounded-3xl bg-gradient-to-br from-white via-indigo-50/20 to-sky-50/30 border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between space-y-4">
+                <div className="lg:col-span-5 p-7 rounded-3xl bg-gradient-to-br from-white via-indigo-50/20 to-sky-50/30 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] flex flex-col justify-between space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-wider">
                       <Zap className="w-4 h-4 fill-indigo-600" />
@@ -468,7 +471,7 @@ export default function Dashboard() {
                         value={scanUrl}
                         onChange={(e) => setScanUrl(e.target.value)}
                         placeholder="https://www.resumereviewer.in"
-                        className="w-full text-xs font-mono bg-white border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-sm"
+                        className="w-full text-xs font-mono bg-white border border-slate-200/90 rounded-2xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-xs"
                       />
                     </div>
 
@@ -478,10 +481,10 @@ export default function Dashboard() {
                         <button
                           type="button"
                           onClick={() => setScanUrl('https://demo-testbed.sitesentinel.dev')}
-                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border transition ${
+                          className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-xl border transition ${
                             scanUrl.includes('demo-testbed') 
-                              ? 'bg-indigo-600 text-white border-indigo-600' 
-                              : 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100'
+                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' 
+                              : 'bg-indigo-50/80 text-indigo-700 border-indigo-200/70 hover:bg-indigo-100'
                           }`}
                         >
                           demo-testbed
@@ -489,10 +492,10 @@ export default function Dashboard() {
                         <button
                           type="button"
                           onClick={() => setScanUrl('https://www.resumereviewer.in')}
-                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border transition ${
+                          className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-xl border transition ${
                             scanUrl.includes('resumereviewer') 
-                              ? 'bg-sky-600 text-white border-sky-600' 
-                              : 'bg-sky-50 text-sky-700 border-sky-100 hover:bg-sky-100'
+                              ? 'bg-sky-600 text-white border-sky-600 shadow-xs' 
+                              : 'bg-sky-50/80 text-sky-700 border-sky-200/70 hover:bg-sky-100'
                           }`}
                         >
                           resumereviewer.in
@@ -500,10 +503,10 @@ export default function Dashboard() {
                         <button
                           type="button"
                           onClick={() => setScanUrl('https://news.ycombinator.com')}
-                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border transition ${
+                          className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-xl border transition ${
                             scanUrl.includes('ycombinator') 
-                              ? 'bg-amber-600 text-white border-amber-600' 
-                              : 'bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100'
+                              ? 'bg-amber-600 text-white border-amber-600 shadow-xs' 
+                              : 'bg-amber-50/80 text-amber-700 border-amber-200/70 hover:bg-amber-100'
                           }`}
                         >
                           hackernews
@@ -516,7 +519,7 @@ export default function Dashboard() {
                           const randomUrl = RANDOM_TARGETS_POOL[Math.floor(Math.random() * RANDOM_TARGETS_POOL.length)];
                           setScanUrl(randomUrl);
                         }}
-                        className="text-[10px] font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-100 px-2 py-0.5 rounded-lg transition flex items-center gap-1"
+                        className="text-[10px] font-bold text-violet-700 bg-violet-50/80 hover:bg-violet-100 border border-violet-200/70 px-2.5 py-1 rounded-xl transition flex items-center gap-1 active:scale-[0.98]"
                       >
                         <span>🎲 Random Webpage</span>
                       </button>
@@ -525,7 +528,7 @@ export default function Dashboard() {
                     <button
                       onClick={() => handleTriggerScan()}
                       disabled={scanning}
-                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-sky-600 to-teal-500 hover:from-indigo-700 hover:to-teal-600 text-white font-bold text-xs shadow-md shadow-indigo-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs shadow-md shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       {scanning ? (
                         <>
@@ -553,7 +556,7 @@ export default function Dashboard() {
             </motion.div>
           )}
 
-          {/* ════ 2. REVIEW QUEUE STUDIO (Split Inspector) ═══════════════════ */}
+          {/* ════ 2. REVIEW QUEUE STUDIO (Stitch Luminous Sentinel Split Inspector) ════ */}
           {activeTab === 'review' && (
             <motion.div
               key="review"
@@ -564,8 +567,8 @@ export default function Dashboard() {
               className="space-y-6"
             >
               {pendingReports.length === 0 ? (
-                <div className="p-16 text-center rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] space-y-4">
-                  <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
+                <div className="p-16 text-center rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-4">
+                  <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center mx-auto shadow-xs">
                     <CheckCircle className="w-8 h-8" />
                   </div>
                   <div>
@@ -580,7 +583,7 @@ export default function Dashboard() {
                   {/* Left Column: List of Pending Reports */}
                   <div className="lg:col-span-5 space-y-3">
                     <div className="flex items-center justify-between px-2">
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
                         {t.pendingApprovals} ({pendingReports.length})
                       </span>
                     </div>
@@ -592,10 +595,10 @@ export default function Dashboard() {
                           <div
                             key={report.id}
                             onClick={() => setSelectedReportId(report.id)}
-                            className={`p-4 rounded-3xl border transition cursor-pointer shadow-sm ${
+                            className={`p-4 rounded-3xl border transition-all cursor-pointer shadow-xs ${
                               isSelected
-                                ? 'bg-indigo-50/80 border-indigo-300 ring-2 ring-indigo-200'
-                                : 'bg-white border-slate-100 hover:border-slate-300'
+                                ? 'bg-indigo-50/70 border-indigo-300 ring-2 ring-indigo-200/60 shadow-indigo-500/5'
+                                : 'bg-white/95 border-slate-200/70 hover:border-slate-300 hover:bg-slate-50/60'
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
@@ -625,7 +628,7 @@ export default function Dashboard() {
 
                   {/* Right Column: Detailed Inspector */}
                   {activeReport && (
-                    <div className="lg:col-span-7 p-7 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] space-y-6">
+                    <div className="lg:col-span-7 p-7 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-6">
                       {/* Top Header & Actions */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-4">
                         <div>
@@ -636,23 +639,27 @@ export default function Dashboard() {
                             <h3 className="text-base font-bold text-slate-900">{activeReport.report_title}</h3>
                           </div>
                           <p className="text-xs font-mono text-slate-400 mt-1">{activeReport.url}</p>
+                          <div className="mt-2 flex items-center gap-1.5 text-[11px] font-mono text-emerald-700 bg-emerald-50/80 px-2.5 py-0.5 rounded-lg border border-emerald-100 w-fit">
+                            <Mail className="w-3 h-3 text-emerald-600" />
+                            <span>Destination: saravanprasanna@gmail.com</span>
+                          </div>
                         </div>
 
                         {/* Action buttons */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <button
                             onClick={() => handleReject(activeReport.issue_id)}
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition"
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-rose-700 bg-rose-50/80 hover:bg-rose-100/80 border border-rose-200/80 transition active:scale-[0.98]"
                           >
                             <XCircle className="w-4 h-4" />
                             <span>{t.reject}</span>
                           </button>
                           <button
                             onClick={() => handleApprove(activeReport.issue_id)}
-                            className="flex items-center gap-1.5 px-5 py-2 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-sm transition"
+                            className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-sm shadow-emerald-500/20 transition active:scale-[0.98]"
                           >
                             <CheckCircle2 className="w-4 h-4" />
-                            <span>{t.approve}</span>
+                            <span>Approve & Dispatch Mail</span>
                           </button>
                         </div>
                       </div>
@@ -661,7 +668,7 @@ export default function Dashboard() {
                       <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                         <button
                           onClick={() => setNativeReportPreview(false)}
-                          className={`text-xs font-bold px-3 py-1.5 rounded-xl transition ${
+                          className={`text-xs font-bold px-3.5 py-1.5 rounded-xl transition ${
                             !nativeReportPreview ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-slate-400 hover:text-slate-800'
                           }`}
                         >
@@ -670,7 +677,7 @@ export default function Dashboard() {
                         {activeReport.report_body_tamil && (
                           <button
                             onClick={() => setNativeReportPreview(true)}
-                            className={`text-xs font-bold px-3 py-1.5 rounded-xl transition ${
+                            className={`text-xs font-bold px-3.5 py-1.5 rounded-xl transition ${
                               nativeReportPreview ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-slate-400 hover:text-slate-800'
                             }`}
                           >
@@ -682,28 +689,28 @@ export default function Dashboard() {
                       {/* Body Content */}
                       {!nativeReportPreview ? (
                         <div className="space-y-2">
-                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
                             Outgoing SMTP Dispatch Payload (Editable)
                           </label>
                           <textarea
                             rows={8}
                             value={editingBodies[activeReport.issue_id] ?? activeReport.report_body}
                             onChange={(e) => setEditingBodies({ ...editingBodies, [activeReport.issue_id]: e.target.value })}
-                            className="w-full text-xs font-mono bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-800 focus:outline-none focus:border-indigo-500 leading-relaxed shadow-inner"
+                            className="w-full text-xs font-mono bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 text-slate-800 focus:outline-none focus:border-indigo-500 leading-relaxed shadow-inner"
                           />
                           <p className="text-[11px] text-slate-400">
-                            Updates are saved automatically and packaged directly into the n8n email node upon approval.
+                            Updates are saved automatically and packaged directly into the Gmail SMTP transport upon approval.
                           </p>
                         </div>
                       ) : (
-                        <div className="p-5 rounded-2xl bg-indigo-50/40 border border-indigo-100 text-xs text-slate-800 whitespace-pre-line leading-relaxed font-sans shadow-sm">
+                        <div className="p-5 rounded-2xl bg-indigo-50/40 border border-indigo-100 text-xs text-slate-800 whitespace-pre-line leading-relaxed font-sans shadow-xs">
                           {activeReport.report_body_tamil}
                         </div>
                       )}
 
                       {/* Technical Evidence Accordion */}
                       {activeReport.evidence && (
-                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5 font-mono text-xs">
+                        <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-1.5 font-mono text-xs">
                           <span className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">{t.evidence}</span>
                           {activeReport.evidence.selector && (
                             <p className="text-slate-600 truncate"><span className="text-slate-400">DOM Selector:</span> <code>{activeReport.evidence.selector}</code></p>
@@ -720,7 +727,7 @@ export default function Dashboard() {
             </motion.div>
           )}
 
-          {/* ════ 3. SITES VIEW ══════════════════════════════════════════════ */}
+          {/* ════ 3. SITES VIEW (Stitch Luminous Sentinel Directory) ════════ */}
           {activeTab === 'sites' && (
             <motion.div
               key="sites"
@@ -730,7 +737,7 @@ export default function Dashboard() {
               transition={{ duration: 0.2 }}
               className="space-y-6"
             >
-              <div className="p-6 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] space-y-4">
+              <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 tracking-tight">Monitored Web Assets Directory</h3>
@@ -757,7 +764,7 @@ export default function Dashboard() {
                             <span>{site.domain}</span>
                           </td>
                           <td className="px-6 py-4 text-slate-500 font-sans">
-                            {site.owner_email || 'test-recipient@sitesentinel.local'}
+                            {site.owner_email || 'saravanprasanna@gmail.com'}
                           </td>
                           <td className="px-6 py-4">
                             <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
@@ -770,13 +777,13 @@ export default function Dashboard() {
                           <td className="px-6 py-4 text-right">
                             <button
                               onClick={() => {
-                                const targetProtocol = site.domain.includes('localhost') ? 'http://' : 'https://';
-                                const fullUrl = `${targetProtocol}${site.domain}/`;
+                                const targetProtocol = site.domain.startsWith('http') ? '' : 'https://';
+                                const fullUrl = site.domain.startsWith('http') ? site.domain : `${targetProtocol}${site.domain}/`;
                                 setScanUrl(fullUrl);
                                 handleTriggerScan(fullUrl);
                               }}
                               disabled={scanning}
-                              className="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition font-sans disabled:opacity-50"
+                              className="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition font-sans disabled:opacity-50 active:scale-[0.98]"
                             >
                               {scanning && scanUrl.includes(site.domain) ? 'Auditing...' : t.auditNow}
                             </button>
@@ -797,7 +804,7 @@ export default function Dashboard() {
             </motion.div>
           )}
 
-          {/* ════ 4. ISSUES EXPLORER VIEW ════════════════════════════════════ */}
+          {/* ════ 4. ISSUES EXPLORER VIEW (Stitch Luminous Sentinel) ════════ */}
           {activeTab === 'issues' && (
             <motion.div
               key="issues"
@@ -817,12 +824,12 @@ export default function Dashboard() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t.searchPlaceholder}
-                    className="w-full text-xs bg-white border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+                    className="w-full text-xs bg-white border border-slate-200/90 rounded-2xl pl-10 pr-4 py-2.5 text-slate-800 focus:outline-none focus:border-indigo-500 shadow-xs"
                   />
                 </div>
 
                 {/* Severity Pills */}
-                <div className="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-1.5 bg-white/90 p-1.5 rounded-2xl border border-slate-200/90 shadow-xs">
                   {[
                     { id: 'all', label: t.filterAll },
                     { id: 'critical', label: t.filterCritical },
@@ -835,7 +842,7 @@ export default function Dashboard() {
                       onClick={() => setSeverityFilter(f.id)}
                       className={`px-3 py-1 text-xs font-bold rounded-xl transition ${
                         severityFilter === f.id
-                          ? 'bg-indigo-600 text-white shadow-sm'
+                          ? 'bg-indigo-600 text-white shadow-xs'
                           : 'text-slate-500 hover:text-slate-900'
                       }`}
                     >
@@ -846,7 +853,7 @@ export default function Dashboard() {
               </div>
 
               {/* Table */}
-              <div className="p-6 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] overflow-hidden">
+              <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] overflow-hidden">
                 <table className="w-full text-left text-xs text-slate-700 font-mono">
                   <thead className="bg-slate-50/80 border-b border-slate-100 uppercase text-[10px] text-slate-400 font-bold tracking-wider">
                     <tr>
@@ -896,7 +903,7 @@ export default function Dashboard() {
             </motion.div>
           )}
 
-          {/* ════ 5. RUN SCAN VIEW ═══════════════════════════════════════════ */}
+          {/* ════ 5. RUN SCAN VIEW (Stitch Luminous Sentinel) ═══════════════ */}
           {activeTab === 'scan' && (
             <motion.div
               key="scan"
@@ -906,7 +913,7 @@ export default function Dashboard() {
               transition={{ duration: 0.2 }}
               className="max-w-2xl mx-auto space-y-6"
             >
-              <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] space-y-6">
+              <div className="p-8 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-6">
                 <div>
                   <h3 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
                     <Radio className="w-5 h-5 text-indigo-600" />
@@ -925,10 +932,10 @@ export default function Dashboard() {
                       <button
                         type="button"
                         onClick={() => setScanUrl('https://demo-testbed.sitesentinel.dev')}
-                        className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border transition ${
+                        className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-xl border transition ${
                           scanUrl.includes('demo-testbed')
-                            ? 'bg-indigo-600 text-white border-indigo-600'
-                            : 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100'
+                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                            : 'bg-indigo-50/80 text-indigo-700 border-indigo-200/70 hover:bg-indigo-100'
                         }`}
                       >
                         demo-testbed
@@ -936,10 +943,10 @@ export default function Dashboard() {
                       <button
                         type="button"
                         onClick={() => setScanUrl('https://www.resumereviewer.in')}
-                        className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border transition ${
+                        className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-xl border transition ${
                           scanUrl.includes('resumereviewer')
-                            ? 'bg-sky-600 text-white border-sky-600'
-                            : 'bg-sky-50 text-sky-700 border-sky-100 hover:bg-sky-100'
+                            ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                            : 'bg-sky-50/80 text-sky-700 border-sky-200/70 hover:bg-sky-100'
                         }`}
                       >
                         resumereviewer.in
@@ -950,7 +957,7 @@ export default function Dashboard() {
                           const randomUrl = RANDOM_TARGETS_POOL[Math.floor(Math.random() * RANDOM_TARGETS_POOL.length)];
                           setScanUrl(randomUrl);
                         }}
-                        className="text-[10px] font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-100 px-2 py-0.5 rounded-lg transition"
+                        className="text-[10px] font-bold text-violet-700 bg-violet-50/80 hover:bg-violet-100 border border-violet-200/70 px-2.5 py-1 rounded-xl transition active:scale-[0.98]"
                       >
                         🎲 Random Webpage
                       </button>
@@ -962,13 +969,13 @@ export default function Dashboard() {
                     value={scanUrl}
                     onChange={(e) => setScanUrl(e.target.value)}
                     placeholder="https://www.resumereviewer.in"
-                    className="w-full text-sm font-mono bg-white border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-sm"
+                    className="w-full text-sm font-mono bg-white border border-slate-200/90 rounded-2xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-xs"
                   />
 
                   <button
                     onClick={() => handleTriggerScan()}
                     disabled={scanning}
-                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-sky-600 to-teal-500 hover:from-indigo-700 hover:to-teal-600 text-white font-bold text-sm shadow-md shadow-indigo-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {scanning ? (
                       <>
@@ -1021,7 +1028,7 @@ export default function Dashboard() {
             </motion.div>
           )}
 
-          {/* ════ 6. AUTOMATION VIEW ═════════════════════════════════════════ */}
+          {/* ════ 6. AUTOMATION VIEW (Stitch Luminous Sentinel) ═══════════════ */}
           {activeTab === 'automation' && (
             <motion.div
               key="automation"
@@ -1033,15 +1040,15 @@ export default function Dashboard() {
             >
               {/* 3 Pastel Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="p-6 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] space-y-2">
+                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-2">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-sky-700 font-bold flex items-center gap-1.5">
                     <Cpu className="w-4 h-4" /> n8n Automation Engine
                   </span>
                   <h4 className="text-2xl font-bold text-slate-900 font-mono">Connected</h4>
-                  <p className="text-xs text-slate-400 font-mono">http://localhost:5678</p>
+                  <p className="text-xs text-slate-400 font-mono">https://n8n-engine.sitesentinel.dev</p>
                 </div>
 
-                <div className="p-6 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] space-y-2">
+                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-2">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-bold flex items-center gap-1.5">
                     <Clock className="w-4 h-4" /> 10-Hour Scheduled Window
                   </span>
@@ -1049,7 +1056,7 @@ export default function Dashboard() {
                   <p className="text-xs text-slate-400 font-mono">Cron: 0 8-17 * * *</p>
                 </div>
 
-                <div className="p-6 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] space-y-2">
+                <div className="p-6 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-2">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-amber-700 font-bold flex items-center gap-1.5">
                     <Radio className="w-4 h-4" /> Rate Limit Cooldown
                   </span>
@@ -1059,7 +1066,7 @@ export default function Dashboard() {
               </div>
 
               {/* Workflows List */}
-              <div className="p-7 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] space-y-4">
+              <div className="p-7 rounded-3xl bg-white/95 border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_1px_3px_rgba(15,23,42,0.02)] space-y-4">
                 <h4 className="text-sm font-bold text-slate-900">Enrolled n8n Automation Workflows</h4>
                 <div className="space-y-3 font-mono text-xs">
                   {[
@@ -1067,7 +1074,7 @@ export default function Dashboard() {
                     { name: 'SiteSentinel - Daily Scheduled Scan', trigger: 'Cron (0 8-17 * * *)', status: 'CONFIGURED', desc: 'Triggers hourly audits within business operating window' },
                     { name: 'SiteSentinel - Approval Digest', trigger: 'Daily 09:00 AM', status: 'CONFIGURED', desc: 'Summarizes pending triage queue for security auditor review' },
                   ].map((wf, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
                       <div>
                         <p className="font-bold text-slate-900">{wf.name}</p>
                         <p className="text-[11px] text-slate-400 font-sans mt-0.5">{wf.desc} • <span className="font-mono text-indigo-600">{wf.trigger}</span></p>
@@ -1084,13 +1091,13 @@ export default function Dashboard() {
         </AnimatePresence>
       </main>
 
-      {/* ── Floating Bottom Dock (Sliding Island Navigation) ─────────────── */}
+      {/* ── Floating Bottom Dock (Stitch Luminous Sentinel Frosted Pill) ── */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
         <motion.nav 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className="bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.15)] p-1.5 rounded-2xl flex items-center gap-1.5"
+          className="bg-white/90 backdrop-blur-2xl border border-slate-200/90 shadow-[0_20px_45px_-10px_rgba(15,23,42,0.16),0_4px_12px_-2px_rgba(15,23,42,0.06)] p-2 rounded-full flex items-center gap-1.5"
         >
           {[
             { id: 'overview', icon: Activity, label: t.overview },
@@ -1106,17 +1113,17 @@ export default function Dashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 ${
+                className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 active:scale-[0.98] ${
                   isActive
-                    ? 'bg-gradient-to-r from-indigo-600 to-sky-600 text-white shadow-md shadow-indigo-100'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                    ? 'bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
                 }`}
               >
                 <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
                 <span className="tracking-tight">{tab.label}</span>
                 {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className={`px-1.5 py-0.2 text-[10px] font-mono font-extrabold rounded-full ${
-                    isActive ? 'bg-white text-indigo-700' : 'bg-rose-100 text-rose-700 animate-pulse'
+                  <span className={`px-2 py-0.2 text-[10px] font-mono font-extrabold rounded-full ${
+                    isActive ? 'bg-white text-indigo-700' : 'bg-rose-500 text-white animate-pulse'
                   }`}>
                     {tab.badge}
                   </span>
@@ -1135,18 +1142,18 @@ export default function Dashboard() {
       {/* ── Settings Modal (Language & Region Selector) ─────────────────── */}
       <AnimatePresence>
         {showSettings && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.15 }}
-              className="w-full max-w-lg bg-white rounded-3xl p-7 shadow-2xl border border-slate-100 space-y-6"
+              className="w-full max-w-lg bg-white/95 backdrop-blur-xl rounded-3xl p-7 shadow-2xl border border-slate-200/80 space-y-6"
             >
               {/* Header */}
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-sm">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-xs">
                     <Languages className="w-5 h-5" />
                   </div>
                   <div>
@@ -1170,10 +1177,10 @@ export default function Dashboard() {
                     <button
                       key={item.code}
                       onClick={() => setLang(item.code)}
-                      className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all text-left ${
+                      className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all text-left active:scale-[0.98] ${
                         isCurrent 
-                          ? 'bg-indigo-50/80 border-indigo-300 ring-2 ring-indigo-200' 
-                          : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          ? 'bg-indigo-50/80 border-indigo-300 ring-2 ring-indigo-200/70 shadow-xs' 
+                          : 'bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
@@ -1198,7 +1205,7 @@ export default function Dashboard() {
                 </span>
                 <button
                   onClick={() => setShowSettings(false)}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition"
+                  className="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm shadow-indigo-500/20 active:scale-[0.98] transition"
                 >
                   {t.close}
                 </button>

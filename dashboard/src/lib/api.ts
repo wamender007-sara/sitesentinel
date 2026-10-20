@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://sitesentinel-api.onrender.com';
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'sitesentinel_dev_api_key_123';
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
