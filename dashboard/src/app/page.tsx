@@ -86,7 +86,7 @@ export default function Dashboard() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
   // Scan state
-  const [scanUrl, setScanUrl] = useState('http://localhost:4000/');
+  const [scanUrl, setScanUrl] = useState('https://www.resumereviewer.in');
   const [scanning, setScanning] = useState(false);
   const [scanStage, setScanStage] = useState(0);
   const [scanResult, setScanResult] = useState<any>(null);
@@ -249,12 +249,12 @@ export default function Dashboard() {
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Quick Audit Button */}
           <button
-            onClick={() => handleTriggerScan('http://localhost:4000/')}
+            onClick={() => handleTriggerScan(scanUrl || 'https://www.resumereviewer.in')}
             disabled={scanning}
             className="hidden md:flex items-center gap-2 text-xs font-semibold bg-gradient-to-r from-indigo-500 to-sky-500 hover:from-indigo-600 hover:to-sky-600 text-white px-3.5 py-2 rounded-xl shadow-sm transition disabled:opacity-50"
           >
             <Zap className="w-3.5 h-3.5 fill-current" />
-            <span>Fast Audit (Testbed)</span>
+            <span>Fast Audit</span>
           </button>
 
           {/* Settings Button (Language & Preferences) */}
@@ -467,7 +467,7 @@ export default function Dashboard() {
                         type="url"
                         value={scanUrl}
                         onChange={(e) => setScanUrl(e.target.value)}
-                        placeholder="http://localhost:4000/"
+                        placeholder="https://www.resumereviewer.in"
                         className="w-full text-xs font-mono bg-white border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-sm"
                       />
                     </div>
@@ -484,7 +484,7 @@ export default function Dashboard() {
                               : 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100'
                           }`}
                         >
-                          testbed (4000)
+                          testbed
                         </button>
                         <button
                           type="button"
@@ -931,7 +931,7 @@ export default function Dashboard() {
                             : 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100'
                         }`}
                       >
-                        testbed (4000)
+                        testbed
                       </button>
                       <button
                         type="button"
@@ -961,7 +961,7 @@ export default function Dashboard() {
                     type="url"
                     value={scanUrl}
                     onChange={(e) => setScanUrl(e.target.value)}
-                    placeholder="http://localhost:4000/"
+                    placeholder="https://www.resumereviewer.in"
                     className="w-full text-sm font-mono bg-white border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-sm"
                   />
 
