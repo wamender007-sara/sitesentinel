@@ -4,6 +4,19 @@
   "description": "Allowlist of authorized target domains for SiteSentinel auditing.",
   "targets": [
     {
+      "id": "target-demo-testbed",
+      "name": "SiteSentinel QA Demo Testbed",
+      "domain": "demo-testbed.sitesentinel.dev",
+      "allowedProtocols": ["http", "https"],
+      "startUrls": [
+        "https://demo-testbed.sitesentinel.dev"
+      ],
+      "maxPagesPerRun": 25,
+      "maxDepth": 3,
+      "contactEmail": "admin@sitesentinel.dev",
+      "enabled": true
+    },
+    {
       "id": "target-local-test-site",
       "name": "SiteSentinel Local Testbed",
       "domain": "localhost:4000",

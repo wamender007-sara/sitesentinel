@@ -477,14 +477,14 @@ export default function Dashboard() {
                         <span className="font-semibold text-[10px] uppercase tracking-wider text-slate-400">Presets:</span>
                         <button
                           type="button"
-                          onClick={() => setScanUrl('http://localhost:4000/')}
+                          onClick={() => setScanUrl('https://demo-testbed.sitesentinel.dev')}
                           className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border transition ${
-                            scanUrl.includes('localhost') 
+                            scanUrl.includes('demo-testbed') 
                               ? 'bg-indigo-600 text-white border-indigo-600' 
                               : 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100'
                           }`}
                         >
-                          testbed
+                          demo-testbed
                         </button>
                         <button
                           type="button"
@@ -924,14 +924,14 @@ export default function Dashboard() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <button
                         type="button"
-                        onClick={() => setScanUrl('http://localhost:4000/')}
+                        onClick={() => setScanUrl('https://demo-testbed.sitesentinel.dev')}
                         className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border transition ${
-                          scanUrl.includes('localhost')
+                          scanUrl.includes('demo-testbed')
                             ? 'bg-indigo-600 text-white border-indigo-600'
                             : 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100'
                         }`}
                       >
-                        testbed
+                        demo-testbed
                       </button>
                       <button
                         type="button"
